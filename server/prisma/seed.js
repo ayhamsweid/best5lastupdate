@@ -8,6 +8,10 @@ async function main() {
   const password = '12345@Ayham';
   const passwordHash = await bcrypt.hash(password, 10);
 
+  const email2 = 'kusayswed@gmail.com';
+  const password2 = '123456';
+  const passwordHash2 = await bcrypt.hash(password2, 10);
+
   const user = await prisma.user.upsert({
     where: { email },
     update: {
@@ -25,7 +29,25 @@ async function main() {
     }
   });
 
+  const user2 = await prisma.user.upsert({
+    where: { email: email2 },
+    update: {
+      full_name: 'Kusay Swed',
+      role: UserRole.ADMIN,
+      is_active: true,
+      password_hash: passwordHash2
+    },
+    create: {
+      full_name: 'Kusay Swed',
+      email: email2,
+      role: UserRole.ADMIN,
+      is_active: true,
+      password_hash: passwordHash2
+    }
+  });
+
   console.log('Seeded admin user:', user.email);
+  console.log('Seeded admin user:', user2.email);
 }
 
 main()
