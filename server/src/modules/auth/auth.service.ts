@@ -19,7 +19,7 @@ export class AuthService {
   signAccessToken(user: any) {
     return this.jwt.sign(
       { id: user.id, email: user.email, role: user.role },
-      { secret: requireEnv('JWT_ACCESS_SECRET'), expiresIn: Number(process.env.JWT_ACCESS_TTL || 900) }
+      { secret: requireEnv('JWT_ACCESS_SECRET'), expiresIn: Number(process.env.JWT_ACCESS_TTL || 86400) }
     );
   }
 

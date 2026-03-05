@@ -9,6 +9,8 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { CreateAutomationDraftDto } from './dto/create-automation-draft.dto';
+import { AutomationTokenGuard } from './guards/automation-token.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import path from 'path';
@@ -77,6 +79,40 @@ export class PostsController {
       });
     }
     await this.logs.log(user.id, 'CREATE', 'POST', created.id, null, created);
+    return created;
+  }
+
+  @UseGuards(AutomationTokenGuard)
+  @Post('automation/draft')
+  async createAutomationDraft(@Body() dto: CreateAutomationDraftDto) {
+    const author = await this.posts.resolveAutomationAuthor();
+    const titleAr = dto.title_ar.trim();
+    const titleEn = dto.title_en?.trim() || titleAr;
+    const excerptAr = dto.excerpt_ar?.trim() || titleAr;
+    const excerptEn = dto.excerpt_en?.trim() || titleEn;
+    const created = await this.posts.create(author.id, {
+      title_ar: titleAr,
+      title_en: titleEn,
+      excerpt_ar: excerptAr,
+      excerpt_en: excerptEn,
+      content_ar: dto.content_ar || '',
+      content_en: dto.content_en || '',
+      category_id: dto.category_id,
+      seo_title_ar: dto.seo_title_ar,
+      seo_title_en: dto.seo_title_en,
+      seo_desc_ar: dto.seo_desc_ar,
+      seo_desc_en: dto.seo_desc_en,
+      canonical_url: dto.canonical_url,
+      og_image_url: dto.og_image_url,
+      cover_image_url: dto.cover_image_url,
+      content_blocks_json: dto.content_blocks_json,
+      status: PostStatus.DRAFT
+    });
+    await this.posts.createRevision(created, author.id);
+    await this.logs.log(author.id, 'CREATE', 'POST', created.id, null, {
+      ...created,
+      automation_source: dto.source || 'opal'
+    });
     return created;
   }
 

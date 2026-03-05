@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { PostStatus } from '@prisma/client';
+import { PostStatus, UserRole } from '@prisma/client';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 
@@ -134,6 +134,38 @@ export class PostsService {
         content_blocks_json: data.content_blocks_json ?? undefined
       }
     });
+  }
+
+  async resolveAutomationAuthor() {
+    const configuredEmail = process.env.AUTOMATION_AUTHOR_EMAIL?.trim();
+    if (configuredEmail) {
+      const configured = await this.prisma.user.findFirst({
+        where: {
+          is_active: true,
+          email: {
+            equals: configuredEmail,
+            mode: 'insensitive'
+          }
+        }
+      });
+      if (configured) return configured;
+    }
+
+    const fallback = await this.prisma.user.findFirst({
+      where: {
+        is_active: true,
+        role: {
+          in: [UserRole.ADMIN, UserRole.CHIEF_EDITOR, UserRole.CONTENT_WRITER]
+        }
+      },
+      orderBy: { created_at: 'asc' }
+    });
+
+    if (!fallback) {
+      throw new NotFoundException('No active author account found for automation');
+    }
+
+    return fallback;
   }
 
   createRevision(post: any, editorId?: string) {

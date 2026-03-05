@@ -1,0 +1,66 @@
+import { IsArray, IsOptional, IsString } from 'class-validator';
+
+export class CreateAutomationDraftDto {
+  @IsString()
+  title_ar!: string;
+
+  @IsOptional()
+  @IsString()
+  title_en?: string;
+
+  @IsOptional()
+  @IsString()
+  excerpt_ar?: string;
+
+  @IsOptional()
+  @IsString()
+  excerpt_en?: string;
+
+  @IsOptional()
+  @IsString()
+  content_ar?: string;
+
+  @IsOptional()
+  @IsString()
+  content_en?: string;
+
+  @IsOptional()
+  @IsString()
+  category_id?: string;
+
+  @IsOptional()
+  @IsString()
+  seo_title_ar?: string;
+
+  @IsOptional()
+  @IsString()
+  seo_title_en?: string;
+
+  @IsOptional()
+  @IsString()
+  seo_desc_ar?: string;
+
+  @IsOptional()
+  @IsString()
+  seo_desc_en?: string;
+
+  @IsOptional()
+  @IsString()
+  canonical_url?: string;
+
+  @IsOptional()
+  @IsString()
+  og_image_url?: string;
+
+  @IsOptional()
+  @IsString()
+  cover_image_url?: string;
+
+  @IsOptional()
+  @IsArray()
+  content_blocks_json?: any[];
+
+  @IsOptional()
+  @IsString()
+  source?: string;
+}

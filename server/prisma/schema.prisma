@@ -147,6 +147,7 @@ model Settings {
   footer_json        Json?
   pages_json         Json?
   pages_meta_json    Json?
+  automation_json    Json?
   created_at         DateTime @default(now())
   updated_at         DateTime @updatedAt
 }
