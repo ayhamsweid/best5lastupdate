@@ -100,7 +100,20 @@ export class PostsService {
     });
   }
 
-  create(authorId: string, data: CreatePostDto) {
+  async create(authorId: string | null | undefined, data: CreatePostDto) {
+    let resolvedAuthorId = authorId || '';
+    if (!resolvedAuthorId) {
+      const fallbackAuthor = await this.prisma.user.findFirst({
+        where: { is_active: true },
+        orderBy: { created_at: 'asc' },
+        select: { id: true }
+      });
+      if (!fallbackAuthor) {
+        throw new NotFoundException('No active author user available');
+      }
+      resolvedAuthorId = fallbackAuthor.id;
+    }
+
     const slugEn = slugify(data.title_en);
     const slugAr = slugify(data.title_ar);
     const publishedAt = data.published_at ? new Date(data.published_at) : undefined;
@@ -111,7 +124,7 @@ export class PostsService {
         ...data,
         slug_en: slugEn,
         slug_ar: slugAr,
-        author_id: authorId,
+        author_id: resolvedAuthorId,
         published_at: data.status === PostStatus.PUBLISHED ? publishedAt || now : publishedAt,
         scheduled_at: scheduledAt,
         content_blocks_json: data.content_blocks_json ?? undefined,

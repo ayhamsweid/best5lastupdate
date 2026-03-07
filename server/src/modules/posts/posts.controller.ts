@@ -3,6 +3,7 @@ import { PostStatus, UserRole } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { PostCreateAuthGuard } from './guards/post-create-auth.guard';
 import { CurrentUser } from '../auth/decorators/user.decorator';
 import { LogsService } from '../logs/logs.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -50,8 +51,7 @@ export class PostsController {
     return this.posts.findOne(id);
   }
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.CONTENT_WRITER, UserRole.EDITOR, UserRole.CHIEF_EDITOR)
+  @UseGuards(PostCreateAuthGuard)
   @Post()
   async create(@Body() dto: CreatePostDto, @CurrentUser() user: any) {
     if ((dto.status === PostStatus.PUBLISHED || dto.status === PostStatus.SCHEDULED) && ![UserRole.ADMIN, UserRole.CHIEF_EDITOR].includes(user.role)) {
@@ -60,8 +60,8 @@ export class PostsController {
     if (dto.status === PostStatus.SCHEDULED && !dto.scheduled_at) {
       throw new BadRequestException('scheduled_at is required for scheduled posts');
     }
-    const created = await this.posts.create(user.id, dto);
-    await this.posts.createRevision(created, user.id);
+    const created = await this.posts.create(user?.id, dto);
+    await this.posts.createRevision(created, user?.id);
     if (dto.status === PostStatus.REVIEW) {
       await this.notifications.notifyRoles([UserRole.ADMIN, UserRole.CHIEF_EDITOR], {
         title: 'Post awaiting review',
@@ -76,7 +76,7 @@ export class PostsController {
         href: `/admin/posts/edit/${created.id}`
       });
     }
-    await this.logs.log(user.id, 'CREATE', 'POST', created.id, null, created);
+    await this.logs.log(user?.id || null, 'CREATE', 'POST', created.id, null, created);
     return created;
   }
 
