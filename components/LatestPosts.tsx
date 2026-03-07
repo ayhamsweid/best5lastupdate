@@ -3,6 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLang } from '../hooks/useLang';
 import { fetchPublicPosts } from '../services/api';
+import { deferNonCritical } from '../utils/deferNonCritical';
 
 type Localized = { ar?: string; en?: string };
 
@@ -17,9 +18,11 @@ const LatestPosts: React.FC<{
   const [posts, setPosts] = useState<any[]>([]);
 
   useEffect(() => {
-    fetchPublicPosts(lang)
-      .then((data) => setPosts(Array.isArray(data) ? data.slice(0, 3) : []))
-      .catch(() => setPosts([]));
+    return deferNonCritical(() => {
+      fetchPublicPosts(lang)
+        .then((data) => setPosts(Array.isArray(data) ? data.slice(0, 3) : []))
+        .catch(() => setPosts([]));
+    });
   }, [lang]);
 
   const title = useMemo(

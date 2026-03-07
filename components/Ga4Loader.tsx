@@ -7,20 +7,30 @@ const Ga4Loader: React.FC<{ measurementId?: string | null }> = ({ measurementId 
       `script[data-ga4="${measurementId}"], script[src*="googletagmanager.com/gtag/js?id=${measurementId}"]`
     );
     if (existing) return;
-    const script = document.createElement('script');
-    script.async = true;
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
-    script.setAttribute('data-ga4', measurementId);
-    document.head.appendChild(script);
+    const load = () => {
+      const script = document.createElement('script');
+      script.async = true;
+      script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
+      script.setAttribute('data-ga4', measurementId);
+      script.onload = () => {
+        (window as any).dataLayer = (window as any).dataLayer || [];
+        (window as any).gtag =
+          (window as any).gtag ||
+          function gtag(...args: unknown[]) {
+            (window as any).dataLayer.push(args);
+          };
+        (window as any).gtag('js', new Date());
+        (window as any).gtag('config', measurementId, { send_page_view: false });
+      };
+      document.head.appendChild(script);
+    };
 
-    const inline = document.createElement('script');
-    inline.innerHTML = `
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', '${measurementId}', { send_page_view: false });
-    `;
-    document.head.appendChild(inline);
+    if (document.readyState === 'complete') {
+      window.setTimeout(load, 0);
+      return;
+    }
+    window.addEventListener('load', load, { once: true });
+    return () => window.removeEventListener('load', load);
   }, [measurementId]);
 
   return null;

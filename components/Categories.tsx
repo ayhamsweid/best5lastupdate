@@ -1,17 +1,33 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { DynamicIcon, iconNames } from 'lucide-react/dynamic';
+import type { LucideIcon } from 'lucide-react';
+import {
+  Beef,
+  Coffee,
+  Croissant,
+  Drumstick,
+  Fish,
+  Folder,
+  IceCreamCone,
+  Pizza,
+  Soup,
+  Utensils,
+  UtensilsCrossed
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLang } from '../hooks/useLang';
 import { fetchPublicCategories } from '../services/api';
+import { deferNonCritical } from '../utils/deferNonCritical';
 
 const Categories: React.FC = () => {
   const { lang } = useLang();
   const [categories, setCategories] = useState<any[]>([]);
 
   useEffect(() => {
-    fetchPublicCategories()
-      .then(setCategories)
-      .catch(() => setCategories([]));
+    return deferNonCritical(() => {
+      fetchPublicCategories()
+        .then(setCategories)
+        .catch(() => setCategories([]));
+    });
   }, []);
 
   const fallback = useMemo(
@@ -27,7 +43,21 @@ const Categories: React.FC = () => {
 
   const list = categories.length ? categories : fallback;
 
-  const iconSet = useMemo(() => new Set(iconNames), []);
+  const iconMap = useMemo<Record<string, LucideIcon>>(
+    () => ({
+      beef: Beef,
+      coffee: Coffee,
+      croissant: Croissant,
+      drumstick: Drumstick,
+      fish: Fish,
+      'ice-cream-cone': IceCreamCone,
+      pizza: Pizza,
+      soup: Soup,
+      utensils: Utensils,
+      'utensils-crossed': UtensilsCrossed
+    }),
+    []
+  );
   const normalizeIconName = (value?: string | null) => {
     const raw = (value || '').trim();
     if (!raw) return null;
@@ -41,19 +71,17 @@ const Categories: React.FC = () => {
   };
   const resolveIconName = (value?: string | null) => {
     const name = normalizeIconName(value);
-    if (!name) return null;
-    if (iconSet.has(name)) return name;
-    return null;
+    return name ? iconMap[name] || null : null;
   };
 
   const renderIcon = (value?: string | null) => {
-    if (!value) return <DynamicIcon name="folder" className="w-6 h-6" fallback={() => null} />;
+    if (!value) return <Folder className="w-6 h-6" aria-hidden="true" />;
     if (value.startsWith('http') || value.startsWith('/')) {
       return <img src={value} alt="" className="w-6 h-6 object-contain" />;
     }
-    const resolved = resolveIconName(value);
-    if (resolved) return <DynamicIcon name={resolved} className="w-6 h-6" fallback={() => null} />;
-    return <DynamicIcon name="folder" className="w-6 h-6" fallback={() => null} />;
+    const ResolvedIcon = resolveIconName(value);
+    if (ResolvedIcon) return <ResolvedIcon className="w-6 h-6" aria-hidden="true" />;
+    return <Folder className="w-6 h-6" aria-hidden="true" />;
   };
 
   return (

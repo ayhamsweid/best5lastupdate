@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import Seo from '../components/Seo';
 import { useLang } from '../hooks/useLang';
 import { fetchPublicCategories, fetchPublicPosts } from '../services/api';
+import { deferNonCritical } from '../utils/deferNonCritical';
 
 const CategoryPage: React.FC = () => {
   const { slug } = useParams();
@@ -11,16 +12,20 @@ const CategoryPage: React.FC = () => {
   const [categories, setCategories] = useState<any[]>([]);
 
   useEffect(() => {
-    fetchPublicCategories()
-      .then(setCategories)
-      .catch(() => setCategories([]));
+    return deferNonCritical(() => {
+      fetchPublicCategories()
+        .then(setCategories)
+        .catch(() => setCategories([]));
+    });
   }, []);
 
   useEffect(() => {
     if (!slug) return;
-    fetchPublicPosts(lang, slug)
-      .then(setPosts)
-      .catch(() => setPosts([]));
+    return deferNonCritical(() => {
+      fetchPublicPosts(lang, slug)
+        .then(setPosts)
+        .catch(() => setPosts([]));
+    });
   }, [lang, slug]);
 
   const category = useMemo(() => {
@@ -36,7 +41,11 @@ const CategoryPage: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-20 text-[#111827] dark:text-white">
-      <Seo title={`Category: ${title || slug}`} canonical={`/${lang}/category/${slug}`} />
+      <Seo
+        title={`Category: ${title || slug}`}
+        description={`Browse top-rated picks in ${title || slug} with updated comparisons and editor recommendations.`}
+        canonical={`/${lang}/category/${slug}`}
+      />
       <h2 className="text-3xl font-black capitalize">{title || slug}</h2>
       <p className="text-gray-500 dark:text-gray-300 mt-2">Latest posts in this category.</p>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">

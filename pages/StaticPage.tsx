@@ -2,8 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Seo from '../components/Seo';
 import { useLang } from '../hooks/useLang';
-import { fetchPublicSettings } from '../services/api';
+import { fetchPublicSettingsCached } from '../services/api';
 import Markdown from '../components/Markdown';
+import { deferNonCritical } from '../utils/deferNonCritical';
 
 const pageMap = {
   privacy: { title: { ar: 'سياسة الخصوصية', en: 'Privacy Policy' }, key: 'privacy' },
@@ -23,15 +24,17 @@ const StaticPage: React.FC<{ slug?: PageKey }> = ({ slug: slugOverride }) => {
   const [pagesMeta, setPagesMeta] = useState<any>(null);
 
   useEffect(() => {
-    fetchPublicSettings()
-      .then((data) => {
-        setPages(data?.pages_json || null);
-        setPagesMeta(data?.pages_meta_json || null);
-      })
-      .catch(() => {
-        setPages(null);
-        setPagesMeta(null);
-      });
+    return deferNonCritical(() => {
+      fetchPublicSettingsCached()
+        .then((data) => {
+          setPages(data?.pages_json || null);
+          setPagesMeta(data?.pages_meta_json || null);
+        })
+        .catch(() => {
+          setPages(null);
+          setPagesMeta(null);
+        });
+    });
   }, []);
 
   const activeSlug = (slugOverride || slug || '') as PageKey | '';

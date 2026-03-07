@@ -4,7 +4,8 @@ import { Link, NavLink } from 'react-router-dom';
 import { useLang } from '../hooks/useLang';
 import { t } from '../utils/i18n';
 import ThemeToggle from './ThemeToggle';
-import { fetchPublicSettings } from '../services/api';
+import { fetchPublicSettingsCached } from '../services/api';
+import { deferNonCritical } from '../utils/deferNonCritical';
 
 type Localized = { ar?: string; en?: string };
 type HeaderConfig = {
@@ -38,9 +39,11 @@ const Header: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    fetchPublicSettings()
-      .then((data) => setConfig(data?.header_json || null))
-      .catch(() => setConfig(null));
+    return deferNonCritical(() => {
+      fetchPublicSettingsCached()
+        .then((data) => setConfig(data?.header_json || null))
+        .catch(() => setConfig(null));
+    });
   }, []);
 
   const navLinks = useMemo(() => {

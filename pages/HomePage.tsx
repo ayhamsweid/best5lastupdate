@@ -1,19 +1,23 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import Hero from '../components/Hero';
-import Categories from '../components/Categories';
-import LatestPosts from '../components/LatestPosts';
-import Features from '../components/Features';
-import Newsletter from '../components/Newsletter';
-import { fetchPublicSettings } from '../services/api';
+import { fetchPublicSettingsCached } from '../services/api';
 import Seo from '../components/Seo';
+import { deferNonCritical } from '../utils/deferNonCritical';
+
+const Categories = lazy(() => import('../components/Categories'));
+const LatestPosts = lazy(() => import('../components/LatestPosts'));
+const Features = lazy(() => import('../components/Features'));
+const Newsletter = lazy(() => import('../components/Newsletter'));
 
 const HomePage: React.FC = () => {
   const [homeConfig, setHomeConfig] = useState<any>(null);
 
   useEffect(() => {
-    fetchPublicSettings()
-      .then((data) => setHomeConfig(data?.home_json || null))
-      .catch(() => setHomeConfig(null));
+    return deferNonCritical(() => {
+      fetchPublicSettingsCached()
+        .then((data) => setHomeConfig(data?.home_json || null))
+        .catch(() => setHomeConfig(null));
+    });
   }, []);
 
   useEffect(() => {
@@ -60,12 +64,18 @@ const HomePage: React.FC = () => {
 
   return (
     <>
-      <Seo title="Best 5 | خيارك الأمثل" />
+      <Seo
+        title="Best 5 | خيارك الأمثل"
+        description={
+          homeConfig?.hero?.description?.ar ||
+          'اكتشف أفضل 5 أماكن وخدمات في تركيا مع Best5، مقارنات موثوقة وتقييمات محدثة تساعدك اختيار الأفضل بسهولة.'
+        }
+      />
       <Hero content={homeConfig?.hero} />
       {sectionsOrder.map((key: string) =>
         sectionsEnabled[key] && sectionMap[key] ? (
           <div key={key} className="fade-in-up" data-animate="fade-up">
-            {sectionMap[key]}
+            <Suspense fallback={null}>{sectionMap[key]}</Suspense>
           </div>
         ) : null
       )}

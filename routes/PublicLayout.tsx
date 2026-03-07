@@ -3,10 +3,11 @@ import { Outlet, useLocation } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useLang } from '../hooks/useLang';
-import { fetchPublicSettings, trackPageView } from '../services/api';
+import { fetchPublicSettingsCached, trackPageView } from '../services/api';
 import Ga4Loader from '../components/Ga4Loader';
 import ContentLoading from '../components/ContentLoading';
 import { useRouteTransition } from '../context/RouteTransitionContext';
+import { deferNonCritical } from '../utils/deferNonCritical';
 
 const DEFAULT_GA4_MEASUREMENT_ID = 'G-ESX7XLJTBP';
 
@@ -22,13 +23,17 @@ const PublicLayout: React.FC = () => {
   }, [lang]);
 
   useEffect(() => {
-    fetchPublicSettings()
-      .then((settings) => setGa4(settings?.ga4_measurement_id || DEFAULT_GA4_MEASUREMENT_ID))
-      .catch(() => setGa4(DEFAULT_GA4_MEASUREMENT_ID));
+    return deferNonCritical(() => {
+      fetchPublicSettingsCached()
+        .then((settings) => setGa4(settings?.ga4_measurement_id || DEFAULT_GA4_MEASUREMENT_ID))
+        .catch(() => setGa4(DEFAULT_GA4_MEASUREMENT_ID));
+    });
   }, []);
 
   useEffect(() => {
-    trackPageView({ path: location.pathname + location.search, lang }).catch(() => null);
+    return deferNonCritical(() => {
+      trackPageView({ path: location.pathname + location.search, lang }).catch(() => null);
+    });
   }, [location.pathname, location.search, lang]);
 
   useEffect(() => {

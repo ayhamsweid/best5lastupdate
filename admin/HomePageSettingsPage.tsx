@@ -38,7 +38,7 @@ const defaultHomeSettings = (): HomeSettings => ({
     },
     placeholder: { ar: 'ماذا تريد أن تستكشف اليوم؟', en: 'What do you want to explore today?' },
     cta: { ar: 'بحث', en: 'Search' },
-    backgroundUrl: 'https://images.unsplash.com/photo-1527838832700-5059252407fa?q=80&w=2598&auto=format&fit=crop'
+    backgroundUrl: '/images/hero-besiktas.webp'
   },
   sections: {
     order: ['categories', 'latest', 'features', 'newsletter'],

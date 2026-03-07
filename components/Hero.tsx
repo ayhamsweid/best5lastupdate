@@ -36,25 +36,34 @@ const Hero: React.FC<{ content?: HeroContent }> = ({ content }) => {
             : 'We research and compare so you always get the best—without jumping between hundreds of pages.')) as string,
       placeholder: (content?.placeholder?.[lang] ?? (lang === 'ar' ? 'ماذا تريد أن تستكشف اليوم؟' : 'What do you want to explore today?')) as string,
       cta: (content?.cta?.[lang] ?? (lang === 'ar' ? 'بحث' : 'Search')) as string,
-      backgroundUrl:
-        content?.backgroundUrl ||
-        'https://images.unsplash.com/photo-1527838832700-5059252407fa?q=80&w=2598&auto=format&fit=crop'
+      backgroundUrl: content?.backgroundUrl || '/images/hero-besiktas.webp'
     }),
     [content, lang]
   );
+  const heroBackgroundUrl =
+    copy.backgroundUrl.includes('images.unsplash.com') || !copy.backgroundUrl.trim()
+      ? '/images/hero-besiktas.webp'
+      : copy.backgroundUrl;
 
   return (
     <section className="relative h-[650px] flex flex-col justify-center items-center text-center px-4 overflow-visible">
       {/* Background with overlay */}
       <div className="absolute inset-0 z-0">
         <img 
-          src={copy.backgroundUrl} 
+          src={heroBackgroundUrl}
+          srcSet="/images/hero-besiktas-768.webp 768w, /images/hero-besiktas.webp 1200w"
+          sizes="(max-width: 768px) 100vw, 1200px"
+          width={1200}
+          height={800}
           alt="Istanbul Besiktas" 
+          fetchPriority="high"
+          loading="eager"
+          decoding="async"
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-slate-900/70"></div>
         {/* Map overlay texture effect */}
-        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/city-fields.png')]"></div>
+        <div className="absolute inset-0 opacity-10 bg-[url('/textures/city-fields.svg')]"></div>
       </div>
 
       <div className="relative z-10 max-w-3xl mx-auto mt-16">

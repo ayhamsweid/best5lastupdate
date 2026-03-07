@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Compass, MapPin, Mail } from 'lucide-react';
 import { useLang } from '../hooks/useLang';
-import { fetchPublicPosts, fetchPublicSettings } from '../services/api';
+import { fetchPublicPosts, fetchPublicSettingsCached } from '../services/api';
 import { Link } from 'react-router-dom';
+import { deferNonCritical } from '../utils/deferNonCritical';
 
 const Footer: React.FC = () => {
   const { lang } = useLang();
@@ -39,9 +40,11 @@ const Footer: React.FC = () => {
   }, [lang]);
 
   useEffect(() => {
-    fetchPublicSettings()
-      .then((data) => setConfig(data?.footer_json || null))
-      .catch(() => setConfig(null));
+    return deferNonCritical(() => {
+      fetchPublicSettingsCached()
+        .then((data) => setConfig(data?.footer_json || null))
+        .catch(() => setConfig(null));
+    });
   }, []);
 
   const latestLinks = useMemo(

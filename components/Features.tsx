@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { DynamicIcon, iconNames } from 'lucide-react/dynamic';
+import type { LucideIcon } from 'lucide-react';
+import { BadgeCheck, Folder, History, ListChecks, ShieldCheck } from 'lucide-react';
 import { useLang } from '../hooks/useLang';
 
 type Localized = { ar?: string; en?: string };
@@ -43,7 +44,16 @@ const Features: React.FC<{ config?: FeaturesConfig }> = ({ config }) => {
     [config, lang]
   );
 
-  const iconSet = useMemo(() => new Set(iconNames), []);
+  const iconMap = useMemo<Record<string, LucideIcon>>(
+    () => ({
+      'badge-check': BadgeCheck,
+      folder: Folder,
+      history: History,
+      'list-checks': ListChecks,
+      'shield-check': ShieldCheck
+    }),
+    []
+  );
   const normalizeIconName = (value?: string | null) => {
     const raw = (value || '').trim();
     if (!raw) return null;
@@ -56,9 +66,7 @@ const Features: React.FC<{ config?: FeaturesConfig }> = ({ config }) => {
   };
   const resolveIconName = (value?: string | null) => {
     const name = normalizeIconName(value);
-    if (!name) return null;
-    if (iconSet.has(name)) return name;
-    return null;
+    return name ? iconMap[name] || null : null;
   };
 
   const toneClasses = (tone?: string, idx = 0) => {
@@ -83,11 +91,12 @@ const Features: React.FC<{ config?: FeaturesConfig }> = ({ config }) => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           {copy.items.map((item, idx) => {
-            const iconName = resolveIconName(item.icon) || 'shield-check';
+            const iconKey = normalizeIconName(item.icon) || 'shield-check';
+            const Icon = resolveIconName(item.icon) || ShieldCheck;
             return (
-              <div key={`${iconName}-${idx}`} className="flex flex-col items-center">
+              <div key={`${iconKey}-${idx}`} className="flex flex-col items-center">
                 <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 border ${toneClasses(item.tone, idx)}`}>
-                  <DynamicIcon name={iconName} className="w-8 h-8" fallback={() => null} />
+                  <Icon className="w-8 h-8" aria-hidden="true" />
                 </div>
                 <h3 className="text-xl font-bold mb-3">{pick(item.title)}</h3>
                 <p className="text-gray-400 text-sm leading-relaxed max-w-xs">{pick(item.text)}</p>

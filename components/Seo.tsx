@@ -9,6 +9,9 @@ interface SeoProps {
   url?: string;
 }
 
+const DEFAULT_DESCRIPTION =
+  'اكتشف أفضل 5 أماكن وخدمات في تركيا مع Best5، مقارنات موثوقة وتقييمات محدثة تساعدك اختيار الأفضل بسهولة.';
+
 const setMeta = (name: string, content?: string) => {
   if (!content) return;
   let tag = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement | null;
@@ -44,17 +47,18 @@ const setMetaProperty = (property: string, content?: string) => {
 
 const Seo: React.FC<SeoProps> = ({ title, description, canonical, image, type = 'website', url }) => {
   useEffect(() => {
+    const finalDescription = description || DEFAULT_DESCRIPTION;
     document.title = title;
-    setMeta('description', description);
+    setMeta('description', finalDescription);
     setCanonical(canonical);
     setMetaProperty('og:title', title);
-    setMetaProperty('og:description', description);
+    setMetaProperty('og:description', finalDescription);
     setMetaProperty('og:type', type);
     setMetaProperty('og:url', url || canonical);
     setMetaProperty('og:image', image);
     setMeta('twitter:card', image ? 'summary_large_image' : 'summary');
     setMeta('twitter:title', title);
-    setMeta('twitter:description', description);
+    setMeta('twitter:description', finalDescription);
     setMeta('twitter:image', image);
   }, [title, description, canonical, image, type, url]);
 

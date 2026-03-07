@@ -104,6 +104,16 @@ export const fetchSettings = () => request('/settings');
 export const updateSettings = (payload: Record<string, unknown>) =>
   request('/settings', { method: 'PATCH', body: JSON.stringify(payload) });
 export const fetchPublicSettings = () => request('/settings/public');
+let publicSettingsPromise: Promise<any> | null = null;
+export const fetchPublicSettingsCached = () => {
+  if (!publicSettingsPromise) {
+    publicSettingsPromise = fetchPublicSettings().catch((err) => {
+      publicSettingsPromise = null;
+      throw err;
+    });
+  }
+  return publicSettingsPromise;
+};
 export const fetchAutomationTokenStatus = () =>
   request<{ source: 'db' | 'env' | null; configured: boolean; last_rotated_at?: string | null; updated_by?: string | null }>(
     '/settings/automation/token-status'

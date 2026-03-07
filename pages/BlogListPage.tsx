@@ -4,6 +4,7 @@ import Seo from '../components/Seo';
 import { useLang } from '../hooks/useLang';
 import { t } from '../utils/i18n';
 import { fetchPublicPosts } from '../services/api';
+import { deferNonCritical } from '../utils/deferNonCritical';
 
 const BlogListPage: React.FC = () => {
   const { lang } = useLang();
@@ -11,9 +12,11 @@ const BlogListPage: React.FC = () => {
   const [query, setQuery] = useState('');
 
   useEffect(() => {
-    fetchPublicPosts(lang)
-      .then(setPosts)
-      .catch(() => setPosts([]));
+    return deferNonCritical(() => {
+      fetchPublicPosts(lang)
+        .then(setPosts)
+        .catch(() => setPosts([]));
+    });
   }, [lang]);
 
   const filtered = useMemo(() => {
@@ -28,7 +31,10 @@ const BlogListPage: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-20 text-[#111827] dark:text-white">
-      <Seo title={`${t(lang, 'blog')} | Besiktas City Guide`} />
+      <Seo
+        title={`${t(lang, 'blog')} | Besiktas City Guide`}
+        description="Latest curated articles and comparisons with trusted local insights."
+      />
       <div className="flex items-end justify-between gap-6 mb-10">
         <div>
           <h2 className="text-3xl font-black">{t(lang, 'blog')}</h2>
