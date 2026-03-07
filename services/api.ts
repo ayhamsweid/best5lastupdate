@@ -104,6 +104,12 @@ export const fetchSettings = () => request('/settings');
 export const updateSettings = (payload: Record<string, unknown>) =>
   request('/settings', { method: 'PATCH', body: JSON.stringify(payload) });
 export const fetchPublicSettings = () => request('/settings/public');
+export const fetchAutomationTokenStatus = () =>
+  request<{ source: 'db' | 'env' | null; configured: boolean; last_rotated_at?: string | null; updated_by?: string | null }>(
+    '/settings/automation/token-status'
+  );
+export const rotateAutomationToken = () =>
+  request<{ token: string; generated_at: string }>('/settings/automation/token-rotate', { method: 'POST' });
 
 export const fetchNotifications = () => request('/notifications');
 export const fetchUnreadNotificationsCount = () => request('/notifications/unread-count');
