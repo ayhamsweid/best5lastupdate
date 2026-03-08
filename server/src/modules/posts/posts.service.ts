@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { PostStatus, UserRole } from '@prisma/client';
+import { PostStatus, Prisma, UserRole } from '@prisma/client';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 
@@ -15,6 +15,39 @@ const slugify = (value: string) =>
 @Injectable()
 export class PostsService {
   constructor(private prisma: PrismaService) {}
+
+  private throwFriendlyPersistenceError(error: unknown): never {
+    if (error instanceof Prisma.PrismaClientValidationError) {
+      throw new BadRequestException('تحقق من الحقول المدخلة (خصوصًا التاريخ والتنسيق) ثم حاول مرة أخرى.');
+    }
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        const target = Array.isArray((error.meta as any)?.target) ? (error.meta as any).target.join(',') : String((error.meta as any)?.target || '');
+        if (target.includes('slug_ar') || target.includes('slug_en')) {
+          throw new ConflictException('يوجد مقال بعنوان مشابه بالفعل. غيّر العنوان قليلًا ثم أعد المحاولة.');
+        }
+        throw new ConflictException('القيمة موجودة مسبقًا ولا يمكن تكرارها.');
+      }
+
+      if (error.code === 'P2003') {
+        const field = String((error.meta as any)?.field_name || '');
+        if (field.includes('category_id')) {
+          throw new BadRequestException('الفئة المختارة غير صالحة أو لم تعد موجودة.');
+        }
+        if (field.includes('tag_id')) {
+          throw new BadRequestException('أحد الوسوم المختارة غير صالح أو لم يعد موجودًا.');
+        }
+        throw new BadRequestException('يوجد مرجع غير صالح في البيانات المرسلة.');
+      }
+
+      if (error.code === 'P2025') {
+        throw new NotFoundException('المقال المطلوب غير موجود.');
+      }
+    }
+
+    throw error;
+  }
 
   private async publishDueScheduled() {
     const now = new Date();
@@ -135,7 +168,7 @@ export class PostsService {
     });
   }
 
-  create(authorId: string, data: CreatePostDto) {
+  async create(authorId: string, data: CreatePostDto) {
     const { tag_ids, ...rest } = data;
     const normalizedTagIds = Array.isArray(tag_ids) ? Array.from(new Set(tag_ids.filter(Boolean))) : [];
     const slugEn = slugify(data.title_en);
@@ -143,55 +176,63 @@ export class PostsService {
     const publishedAt = data.published_at ? new Date(data.published_at) : undefined;
     const scheduledAt = data.scheduled_at ? new Date(data.scheduled_at) : undefined;
     const now = new Date();
-    return this.prisma.post.create({
-      data: {
-        ...rest,
-        slug_en: slugEn,
-        slug_ar: slugAr,
-        author_id: authorId,
-        published_at: data.status === PostStatus.PUBLISHED ? publishedAt || now : publishedAt,
-        scheduled_at: scheduledAt,
-        content_blocks_json: data.content_blocks_json ?? undefined,
-        content_ar: data.content_ar ?? '',
-        content_en: data.content_en ?? '',
-        ...(normalizedTagIds.length
-          ? {
-              tags: {
-                create: normalizedTagIds.map((tagId) => ({ tag_id: tagId }))
+    try {
+      return await this.prisma.post.create({
+        data: {
+          ...rest,
+          slug_en: slugEn,
+          slug_ar: slugAr,
+          author_id: authorId,
+          published_at: data.status === PostStatus.PUBLISHED ? publishedAt || now : publishedAt,
+          scheduled_at: scheduledAt,
+          content_blocks_json: data.content_blocks_json ?? undefined,
+          content_ar: data.content_ar ?? '',
+          content_en: data.content_en ?? '',
+          ...(normalizedTagIds.length
+            ? {
+                tags: {
+                  create: normalizedTagIds.map((tagId) => ({ tag_id: tagId }))
+                }
               }
-            }
-          : {})
-      }
-    });
+            : {})
+        }
+      });
+    } catch (error) {
+      this.throwFriendlyPersistenceError(error);
+    }
   }
 
-  update(id: string, data: UpdatePostDto) {
+  async update(id: string, data: UpdatePostDto) {
     const { tag_ids, ...rest } = data;
     const normalizedTagIds = Array.isArray(tag_ids) ? Array.from(new Set(tag_ids.filter(Boolean))) : undefined;
     const publishedAt = data.published_at ? new Date(data.published_at) : undefined;
     const scheduledAt = data.scheduled_at ? new Date(data.scheduled_at) : undefined;
     const now = new Date();
-    return this.prisma.post.update({
-      where: { id },
-      data: {
-        ...rest,
-        published_at: data.status === PostStatus.PUBLISHED ? publishedAt || now : publishedAt,
-        scheduled_at: scheduledAt,
-        content_blocks_json: data.content_blocks_json ?? undefined,
-        ...(normalizedTagIds !== undefined
-          ? {
-              tags: {
-                deleteMany: {},
-                ...(normalizedTagIds.length
-                  ? {
-                      create: normalizedTagIds.map((tagId) => ({ tag_id: tagId }))
-                    }
-                  : {})
+    try {
+      return await this.prisma.post.update({
+        where: { id },
+        data: {
+          ...rest,
+          published_at: data.status === PostStatus.PUBLISHED ? publishedAt || now : publishedAt,
+          scheduled_at: scheduledAt,
+          content_blocks_json: data.content_blocks_json ?? undefined,
+          ...(normalizedTagIds !== undefined
+            ? {
+                tags: {
+                  deleteMany: {},
+                  ...(normalizedTagIds.length
+                    ? {
+                        create: normalizedTagIds.map((tagId) => ({ tag_id: tagId }))
+                      }
+                    : {})
+                }
               }
-            }
-          : {})
-      }
-    });
+            : {})
+        }
+      });
+    } catch (error) {
+      this.throwFriendlyPersistenceError(error);
+    }
   }
 
   async resolveAutomationAuthor() {

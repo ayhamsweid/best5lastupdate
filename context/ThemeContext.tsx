@@ -17,6 +17,8 @@ const getPreferredTheme = () =>
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window === 'undefined') return 'light';
+    const preBoot = document.documentElement.getAttribute('data-theme') as Theme | null;
+    if (preBoot === 'light' || preBoot === 'dark') return preBoot;
     const stored = window.localStorage.getItem(STORAGE_KEY) as Theme | null;
     return stored || getPreferredTheme();
   });

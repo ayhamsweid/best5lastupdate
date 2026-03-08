@@ -57,7 +57,7 @@ const Footer: React.FC = () => {
     [latestPosts, lang]
   );
   return (
-    <footer className="bg-white text-gray-600 pt-20 pb-10 px-4 border-t border-gray-200 dark:bg-secondary dark:text-gray-400 dark:border-gray-800">
+    <footer className="bg-white text-gray-600 pt-20 pb-10 px-4 border-t border-gray-200 dark:bg-secondary dark:text-gray-400 dark:border-gray-800 min-h-[560px] md:min-h-[420px]">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
         {/* Brand */}
         <div>

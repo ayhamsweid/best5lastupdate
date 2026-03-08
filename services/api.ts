@@ -29,6 +29,9 @@ const extractApiErrorMessage = (status: number, raw: string) => {
     return 'تم تجاوز عدد المحاولات المسموح. حاول مرة أخرى بعد قليل.';
   }
   if (status >= 500) {
+    if (message && !/internal server error/i.test(lower)) {
+      return message;
+    }
     return 'حدث خطأ في الخادم. حاول مرة أخرى.';
   }
 
