@@ -57,7 +57,9 @@ export const parseImportedPostJson = (text: string): { values: Record<string, an
   };
 
   const tags = Array.isArray(meta.tags) ? meta.tags : [];
-  values.tag_ids = tags.map((tag: any) => (typeof tag === 'string' ? tag : tag?.id)).filter(Boolean);
+  values.tag_ids = tags
+    .map((tag: any) => (tag && typeof tag === 'object' ? tag.id : undefined))
+    .filter((id: any) => typeof id === 'string' && id.trim().length > 0);
 
   if (Array.isArray(payload.content_blocks_json)) {
     const blocks = payload.content_blocks_json.map((block: any) => ({ ...block, id: block?.id || makeId() }));
@@ -180,4 +182,3 @@ export const parseImportedPostJson = (text: string): { values: Record<string, an
 
   return { values, blocks };
 };
-

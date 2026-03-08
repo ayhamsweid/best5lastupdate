@@ -99,6 +99,15 @@ const PostEditor: React.FC<PostEditorProps> = ({ values, onChange }) => {
   }, []);
 
   useEffect(() => {
+    if (!tags.length || !Array.isArray(values.tag_ids)) return;
+    const validTagIds = new Set(tags.map((tag: any) => tag?.id).filter(Boolean));
+    const cleaned = values.tag_ids.filter((id: string) => validTagIds.has(id));
+    if (cleaned.length !== values.tag_ids.length) {
+      update('tag_ids', cleaned);
+    }
+  }, [tags, values.tag_ids]);
+
+  useEffect(() => {
     if (!selectedId && blocks.length) {
       setSelectedId(blocks[0].id);
     } else if (selectedId && !blocks.find((b) => b.id === selectedId) && blocks.length) {
