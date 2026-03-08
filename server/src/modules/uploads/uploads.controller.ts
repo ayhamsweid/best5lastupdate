@@ -99,20 +99,66 @@ export class UploadsController {
   async remove(@Param('name') name: string, @Query('force') force?: string) {
     const uploadDir = process.env.UPLOAD_DIR || 'uploads';
     const safeName = path.basename(name);
-    const asset = await this.prisma.mediaAsset.findUnique({ where: { name: safeName } });
+    const normalizedUrl = `/uploads/${safeName}`;
+    const normalizedUrlWithSlash = `${normalizedUrl}/`;
+    const asset =
+      (await this.prisma.mediaAsset.findUnique({ where: { name: safeName } })) ||
+      (await this.prisma.mediaAsset.findFirst({
+        where: {
+          OR: [
+            { url: normalizedUrl },
+            { url: normalizedUrlWithSlash },
+            { url: { endsWith: `/${safeName}` } },
+            { url: { endsWith: `/${safeName}/` } }
+          ]
+        }
+      }));
+
     if (asset && force !== '1') {
       const usage = await this.usageCountMap([asset.url]);
       if ((usage[asset.url] || 0) > 0) {
         return { ok: false, reason: 'in_use' };
       }
     }
-    const fullPath = path.join(uploadDir, safeName);
-    if (fs.existsSync(fullPath)) {
-      fs.unlinkSync(fullPath);
-      await this.prisma.mediaAsset.deleteMany({ where: { name: safeName } });
+
+    const candidateNames = Array.from(
+      new Set(
+        [
+          safeName,
+          asset?.name,
+          path.basename((asset?.url || '').replace(/\/+$/, ''))
+        ].filter((value): value is string => Boolean(value && value.trim()))
+      )
+    );
+
+    let deletedFile = false;
+    for (const candidate of candidateNames) {
+      const fullPath = path.join(uploadDir, candidate);
+      if (!fs.existsSync(fullPath)) continue;
+      try {
+        fs.unlinkSync(fullPath);
+        deletedFile = true;
+        break;
+      } catch {
+        return { ok: false, reason: 'unlink_failed' };
+      }
+    }
+
+    const deletedAsset = await this.prisma.mediaAsset.deleteMany({
+      where: {
+        OR: [
+          { name: safeName },
+          ...(asset?.id ? [{ id: asset.id }] : []),
+          { url: normalizedUrl },
+          { url: normalizedUrlWithSlash }
+        ]
+      }
+    });
+
+    if (deletedFile || deletedAsset.count > 0) {
       return { ok: true };
     }
-    return { ok: false };
+    return { ok: false, reason: 'not_found' };
   }
 
   @Post('images')
