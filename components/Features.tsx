@@ -84,10 +84,10 @@ const Features: React.FC<{ config?: FeaturesConfig }> = ({ config }) => {
   const pick = (value?: Localized) => value?.[lang] || value?.ar || value?.en || '';
 
   return (
-    <section className="bg-secondary py-20 px-4 text-white">
+    <section className="bg-white py-20 px-4 text-gray-900 dark:bg-secondary dark:text-white">
       <div className="max-w-7xl mx-auto text-center">
         <h2 className="text-3xl md:text-4xl font-black mb-4">{copy.heading}</h2>
-        <p className="text-gray-400 max-w-2xl mx-auto mb-16">{copy.sub}</p>
+        <p className="text-gray-600 max-w-2xl mx-auto mb-16 dark:text-gray-400">{copy.sub}</p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           {copy.items.map((item, idx) => {
@@ -99,7 +99,7 @@ const Features: React.FC<{ config?: FeaturesConfig }> = ({ config }) => {
                   <Icon className="w-8 h-8" aria-hidden="true" />
                 </div>
                 <h3 className="text-xl font-bold mb-3">{pick(item.title)}</h3>
-                <p className="text-gray-400 text-sm leading-relaxed max-w-xs">{pick(item.text)}</p>
+                <p className="text-gray-600 text-sm leading-relaxed max-w-xs dark:text-gray-400">{pick(item.text)}</p>
               </div>
             );
           })}

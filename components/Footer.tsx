@@ -80,7 +80,7 @@ const Footer: React.FC = () => {
               {latestLinks.length ? (
                 latestLinks.map((item) => (
                   <li key={item.slug}>
-                    <Link to={`/${lang}/blog/${item.slug}`} className="hover:text-white transition-colors">
+                    <Link to={`/${lang}/blog/${item.slug}`} className="hover:text-gray-900 dark:hover:text-white transition-colors">
                       {item.title}
                     </Link>
                   </li>
@@ -106,7 +106,7 @@ const Footer: React.FC = () => {
                 if (item.external) {
                   return (
                     <li key={`${label}-${idx}`}>
-                      <a href={path} target="_blank" rel="noreferrer" className="hover:text-white transition-colors">
+                      <a href={path} target="_blank" rel="noreferrer" className="hover:text-gray-900 dark:hover:text-white transition-colors">
                         {label}
                       </a>
                     </li>
@@ -114,7 +114,7 @@ const Footer: React.FC = () => {
                 }
                 return (
                   <li key={`${label}-${idx}`}>
-                    <Link to={path.startsWith('/') ? `/${lang}${path}` : `/${lang}/${path}`} className="hover:text-white transition-colors">
+                    <Link to={path.startsWith('/') ? `/${lang}${path}` : `/${lang}/${path}`} className="hover:text-gray-900 dark:hover:text-white transition-colors">
                       {label}
                     </Link>
                   </li>
@@ -144,7 +144,7 @@ const Footer: React.FC = () => {
         <div className="flex gap-4 mt-4 md:mt-0 items-center">
           {copy.credit && <span>{copy.credit}</span>}
           {(copy.socials || []).map((item: any, idx: number) => (
-            <a key={`${item.label}-${idx}`} href={item.url} target="_blank" rel="noreferrer" className="hover:text-white">
+            <a key={`${item.label}-${idx}`} href={item.url} target="_blank" rel="noreferrer" className="hover:text-gray-900 dark:hover:text-white">
               {item.label || item.icon || 'social'}
             </a>
           ))}
