@@ -1,4 +1,5 @@
 import { IsArray, IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PostStatus } from '@prisma/client';
 
 export class CreatePostDto {
@@ -53,6 +54,11 @@ export class CreatePostDto {
   @IsOptional()
   @IsString()
   og_image_url?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  cover_image_url?: string;
 
   @IsOptional()
   @IsDateString()
