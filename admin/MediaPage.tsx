@@ -43,18 +43,58 @@ const MediaPage: React.FC = () => {
     }
   };
 
-  const onDelete = async (name: string, inUse: boolean) => {
+  const normalizeDeleteName = (value?: string) =>
+    (value || '')
+      .trim()
+      .replace(/\/+$/g, '')
+      .replace(/^\/?uploads\//, '')
+      .trim();
+
+  const urlFileName = (url?: string) => {
+    const trimmed = (url || '').trim();
+    if (!trimmed) return '';
+    try {
+      const pathname = new URL(trimmed, window.location.origin).pathname;
+      return normalizeDeleteName(pathname.split('/').filter(Boolean).pop() || '');
+    } catch {
+      return normalizeDeleteName(trimmed.split('/').filter(Boolean).pop() || '');
+    }
+  };
+
+  const deleteWithFallbackNames = async (
+    file: { name: string; url: string },
+    force = false
+  ) => {
+    const candidates = Array.from(
+      new Set([normalizeDeleteName(file.name), urlFileName(file.url)].filter(Boolean))
+    );
+    let lastResult: { ok?: boolean; reason?: string } | null = null;
+    for (const candidate of candidates) {
+      const result = await deleteUpload(candidate, force);
+      lastResult = result || null;
+      if (result?.ok) {
+        return { deleted: true, result };
+      }
+      if (result?.reason === 'in_use') {
+        return { deleted: false, result };
+      }
+    }
+    return { deleted: false, result: lastResult };
+  };
+
+  const onDelete = async (file: { name: string; url: string; usage_count?: number }) => {
+    const inUse = (file.usage_count || 0) > 0;
     if (!confirm('Delete this image?')) return;
-    const result = await deleteUpload(name);
-    let deleted = result?.ok === true;
-    if (result?.reason === 'in_use' && inUse) {
+    const firstAttempt = await deleteWithFallbackNames(file);
+    let deleted = firstAttempt.deleted;
+    if (firstAttempt.result?.reason === 'in_use' && inUse) {
       const force = confirm('This image is used in content. Force delete?');
       if (!force) return;
-      const forced = await deleteUpload(name, true);
-      deleted = forced?.ok === true;
+      const forced = await deleteWithFallbackNames(file, true);
+      deleted = forced.deleted;
     }
     if (deleted) {
-      setFiles((prev) => prev.filter((f) => f.name !== name));
+      setFiles((prev) => prev.filter((f) => f.name !== file.name));
       setMessage('Deleted successfully');
       setTimeout(() => setMessage(null), 2000);
       return;
@@ -120,13 +160,18 @@ const MediaPage: React.FC = () => {
 
     await Promise.all(
       selectedNames.map(async (name) => {
+        const file = files.find((item) => item.name === name);
+        if (!file) {
+          failed.push(name);
+          return;
+        }
         try {
-          const result = await deleteUpload(name);
-          if (result?.ok) {
+          const result = await deleteWithFallbackNames(file);
+          if (result.deleted) {
             deleted.add(name);
             return;
           }
-          if (result?.reason === 'in_use') {
+          if (result.result?.reason === 'in_use') {
             inUse.push(name);
             return;
           }
@@ -142,9 +187,14 @@ const MediaPage: React.FC = () => {
       if (force) {
         await Promise.all(
           inUse.map(async (name) => {
+            const file = files.find((item) => item.name === name);
+            if (!file) {
+              failed.push(name);
+              return;
+            }
             try {
-              const result = await deleteUpload(name, true);
-              if (result?.ok) {
+              const result = await deleteWithFallbackNames(file, true);
+              if (result.deleted) {
                 deleted.add(name);
                 return;
               }
@@ -267,7 +317,7 @@ const MediaPage: React.FC = () => {
                   Copy link
                 </button>
                 <button
-                  onClick={() => onDelete(file.name, (file.usage_count || 0) > 0)}
+                  onClick={() => onDelete(file)}
                   className="text-[10px] px-2 py-1 rounded-full bg-red-500/20 border border-red-500/30 text-red-200 hover:bg-red-500/30"
                 >
                   Delete
