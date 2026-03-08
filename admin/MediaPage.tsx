@@ -46,12 +46,21 @@ const MediaPage: React.FC = () => {
   const onDelete = async (name: string, inUse: boolean) => {
     if (!confirm('Delete this image?')) return;
     const result = await deleteUpload(name);
+    let deleted = result?.ok === true;
     if (result?.reason === 'in_use' && inUse) {
       const force = confirm('This image is used in content. Force delete?');
       if (!force) return;
-      await deleteUpload(name, true);
+      const forced = await deleteUpload(name, true);
+      deleted = forced?.ok === true;
     }
-    setFiles((prev) => prev.filter((f) => f.name !== name));
+    if (deleted) {
+      setFiles((prev) => prev.filter((f) => f.name !== name));
+      setMessage('Deleted successfully');
+      setTimeout(() => setMessage(null), 2000);
+      return;
+    }
+    setMessage('Delete failed');
+    setTimeout(() => setMessage(null), 3000);
   };
 
   const compressImage = async (file: File, maxWidth = 1600, quality = 0.8) => {
@@ -105,9 +114,68 @@ const MediaPage: React.FC = () => {
   const deleteSelected = async () => {
     if (selectedNames.length === 0) return;
     if (!confirm(`Delete ${selectedNames.length} images?`)) return;
-    await Promise.all(selectedNames.map((name) => deleteUpload(name)));
-    setFiles((prev) => prev.filter((f) => !selectedSet[f.name]));
+    const deleted = new Set<string>();
+    const inUse: string[] = [];
+    const failed: string[] = [];
+
+    await Promise.all(
+      selectedNames.map(async (name) => {
+        try {
+          const result = await deleteUpload(name);
+          if (result?.ok) {
+            deleted.add(name);
+            return;
+          }
+          if (result?.reason === 'in_use') {
+            inUse.push(name);
+            return;
+          }
+          failed.push(name);
+        } catch {
+          failed.push(name);
+        }
+      })
+    );
+
+    if (inUse.length > 0) {
+      const force = confirm(`${inUse.length} selected images are used in content. Force delete them?`);
+      if (force) {
+        await Promise.all(
+          inUse.map(async (name) => {
+            try {
+              const result = await deleteUpload(name, true);
+              if (result?.ok) {
+                deleted.add(name);
+                return;
+              }
+              failed.push(name);
+            } catch {
+              failed.push(name);
+            }
+          })
+        );
+      }
+    }
+
+    if (deleted.size > 0) {
+      setFiles((prev) => prev.filter((f) => !deleted.has(f.name)));
+    }
     setSelectedSet({});
+
+    if (failed.length > 0) {
+      setMessage(`Deleted ${deleted.size}. Failed ${failed.length}.`);
+      setTimeout(() => setMessage(null), 3500);
+      return;
+    }
+
+    if (deleted.size > 0) {
+      setMessage(`Deleted ${deleted.size} image(s).`);
+      setTimeout(() => setMessage(null), 2500);
+      return;
+    }
+
+    setMessage('No images were deleted.');
+    setTimeout(() => setMessage(null), 2500);
   };
 
   return (
