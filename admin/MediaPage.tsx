@@ -102,6 +102,12 @@ const MediaPage: React.FC = () => {
         if (!force) return;
         const forced = await deleteWithFallbackNames(file, true);
         deleted = forced.deleted;
+        if (!deleted) {
+          setMessage(`Delete failed: ${forced.result?.reason || 'unknown'}`);
+          setTimeout(() => setMessage(null), 3500);
+          await reloadFiles();
+          return;
+        }
       }
       await reloadFiles();
       if (deleted) {
@@ -109,7 +115,7 @@ const MediaPage: React.FC = () => {
         setTimeout(() => setMessage(null), 2000);
         return;
       }
-      setMessage('Delete failed');
+      setMessage(`Delete failed: ${firstAttempt.result?.reason || 'unknown'}`);
       setTimeout(() => setMessage(null), 3000);
     } catch (e: any) {
       setMessage(e?.message || 'Delete failed');
@@ -171,12 +177,14 @@ const MediaPage: React.FC = () => {
     const deleted = new Set<string>();
     const inUse: string[] = [];
     const failed: string[] = [];
+    const failedDetails: string[] = [];
     try {
       await Promise.all(
         selectedNames.map(async (name) => {
           const file = files.find((item) => item.name === name);
           if (!file) {
             failed.push(name);
+            failedDetails.push(`${name}: not_found_in_ui`);
             return;
           }
           try {
@@ -190,8 +198,10 @@ const MediaPage: React.FC = () => {
               return;
             }
             failed.push(name);
+            failedDetails.push(`${name}: ${result.result?.reason || 'unknown'}`);
           } catch {
             failed.push(name);
+            failedDetails.push(`${name}: request_failed`);
           }
         })
       );
@@ -204,6 +214,7 @@ const MediaPage: React.FC = () => {
               const file = files.find((item) => item.name === name);
               if (!file) {
                 failed.push(name);
+                failedDetails.push(`${name}: not_found_in_ui`);
                 return;
               }
               try {
@@ -213,8 +224,10 @@ const MediaPage: React.FC = () => {
                   return;
                 }
                 failed.push(name);
+                failedDetails.push(`${name}: ${result.result?.reason || 'unknown'}`);
               } catch {
                 failed.push(name);
+                failedDetails.push(`${name}: request_failed`);
               }
             })
           );
@@ -223,8 +236,9 @@ const MediaPage: React.FC = () => {
       await reloadFiles();
 
       if (failed.length > 0) {
-        setMessage(`Deleted ${deleted.size}. Failed ${failed.length}.`);
-        setTimeout(() => setMessage(null), 3500);
+        const reasons = Array.from(new Set(failedDetails)).slice(0, 3).join(' | ');
+        setMessage(`Deleted ${deleted.size}. Failed ${failed.length}. ${reasons}`);
+        setTimeout(() => setMessage(null), 7000);
         return;
       }
 
