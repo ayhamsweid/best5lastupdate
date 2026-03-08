@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Seo from '../components/Seo';
 import { useLang } from '../hooks/useLang';
-import { fetchPublicPost } from '../services/api';
+import { fetchPublicPost, fetchPublicPosts } from '../services/api';
 import BlogBlocksRenderer from '../components/BlogBlocksRenderer';
 
 interface BlogDetailPageProps {
@@ -15,6 +15,7 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ overridePost, overrideL
   const { lang: routeLang } = useLang();
   const lang = overrideLang || routeLang;
   const [post, setPost] = useState<any | null>(null);
+  const [relatedPosts, setRelatedPosts] = useState<any[]>([]);
 
   useEffect(() => {
     if (overridePost) {
@@ -26,6 +27,71 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ overridePost, overrideL
       .then(setPost)
       .catch(() => setPost(null));
   }, [slug, lang, overridePost]);
+
+  useEffect(() => {
+    if (!post?.id) {
+      setRelatedPosts([]);
+      return;
+    }
+
+    const currentTagIds = new Set(
+      (Array.isArray(post.tags) ? post.tags : [])
+        .map((postTag: any) => postTag?.tag?.id || postTag?.tag_id)
+        .filter(Boolean)
+    );
+    if (!currentTagIds.size) {
+      setRelatedPosts([]);
+      return;
+    }
+
+    fetchPublicPosts(lang)
+      .then((posts: any[]) => {
+        const candidates = (Array.isArray(posts) ? posts : []).filter((candidate) => {
+          if (!candidate?.id || candidate.id === post.id) return false;
+          const candidateTagIds = (Array.isArray(candidate.tags) ? candidate.tags : [])
+            .map((postTag: any) => postTag?.tag?.id || postTag?.tag_id)
+            .filter(Boolean);
+          return candidateTagIds.some((tagId: string) => currentTagIds.has(tagId));
+        });
+
+        const byCategory = new Map<string, { score: number; item: any }>();
+        for (const candidate of candidates) {
+          const categoryId = candidate.category_id || candidate.category?.id;
+          if (!categoryId) continue;
+
+          const candidateTagIds = new Set(
+            (Array.isArray(candidate.tags) ? candidate.tags : [])
+              .map((postTag: any) => postTag?.tag?.id || postTag?.tag_id)
+              .filter(Boolean)
+          );
+          let score = 0;
+          currentTagIds.forEach((tagId) => {
+            if (candidateTagIds.has(tagId)) score += 1;
+          });
+          if (!score) continue;
+
+          const existing = byCategory.get(categoryId);
+          const candidatePublished = candidate.published_at ? new Date(candidate.published_at).getTime() : 0;
+          const existingPublished = existing?.item?.published_at ? new Date(existing.item.published_at).getTime() : 0;
+          if (!existing || score > existing.score || (score === existing.score && candidatePublished > existingPublished)) {
+            byCategory.set(categoryId, { score, item: candidate });
+          }
+        }
+
+        const selected = Array.from(byCategory.values())
+          .sort((a, b) => {
+            if (b.score !== a.score) return b.score - a.score;
+            const aPublished = a.item.published_at ? new Date(a.item.published_at).getTime() : 0;
+            const bPublished = b.item.published_at ? new Date(b.item.published_at).getTime() : 0;
+            return bPublished - aPublished;
+          })
+          .map((entry) => entry.item)
+          .slice(0, 6);
+
+        setRelatedPosts(selected);
+      })
+      .catch(() => setRelatedPosts([]));
+  }, [post, lang]);
 
   const pills = useMemo(
     () =>
@@ -157,25 +223,25 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ overridePost, overrideL
       )}
 
       <section className="max-w-7xl mx-auto px-6 pt-10">
-        <div className="relative overflow-hidden rounded-3xl bg-[#111827] text-white border border-white/10">
+        <div className="relative overflow-hidden rounded-3xl bg-white text-[#111827] border border-[#E5E7EB] dark:bg-[#111827] dark:text-white dark:border-white/10">
           {post.cover_image_url && (
             <img
               src={post.cover_image_url}
               alt=""
               loading="lazy"
-              className="absolute inset-0 h-full w-full object-cover opacity-35"
+              className="absolute inset-0 h-full w-full object-cover opacity-20 dark:opacity-35"
             />
           )}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/70" />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/75 to-white/50 dark:from-black/20 dark:to-black/70" />
           <div className="relative z-10 px-6 py-12 md:px-12 text-center">
             <div className="inline-flex items-center gap-2 rounded-full bg-[#22C55E]/20 text-[#22C55E] px-4 py-1.5 text-xs font-bold border border-[#22C55E]/30">
               {publishedAt ? (lang === 'ar' ? `آخر تحديث: ${publishedAt}` : `Last updated: ${publishedAt}`) : (lang === 'ar' ? 'محدث باستمرار' : 'Continuously updated')}
             </div>
             <h1 className="mt-6 text-3xl md:text-6xl font-black leading-tight">{title}</h1>
-            <p className="mt-4 text-white/80 text-sm md:text-lg max-w-3xl mx-auto">{excerpt}</p>
+            <p className="mt-4 text-gray-700 dark:text-white/80 text-sm md:text-lg max-w-3xl mx-auto">{excerpt}</p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               {pills.map((pill) => (
-                <span key={pill} className="rounded-full bg-white/10 px-4 py-2 text-xs font-semibold">
+                <span key={pill} className="rounded-full bg-[#F3F4F6] text-gray-700 px-4 py-2 text-xs font-semibold dark:bg-white/10 dark:text-white">
                   {pill}
                 </span>
               ))}
@@ -211,14 +277,29 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ overridePost, overrideL
                 ))}
               </nav>
             </div>
-            <div className="bg-[#E8F5EC] p-6 rounded-2xl border border-[#D1E7D8] dark:bg-[#0f172a] dark:border-white/10">
-              <div className="font-black text-[#0f172a]">{lang === 'ar' ? 'هل تبحث عن السكن؟' : 'Looking for stays?'}</div>
-              <div className="text-xs text-[#0f172a]/70 mt-2 dark:text-white/70">
-                {lang === 'ar' ? 'اكتشف أفضل الفنادق القريبة من مراكز الطعام.' : 'Discover top hotels near the food hotspots.'}
+            <div className="bg-white p-6 rounded-2xl border border-[#E5E7EB] shadow-sm dark:bg-[#111827] dark:border-white/10">
+              <div className="font-black mb-4">{lang === 'ar' ? 'مقالات ذات صلة' : 'Related Blogs'}</div>
+              <div className="space-y-3 text-sm">
+                {relatedPosts.length ? (
+                  relatedPosts.map((item) => {
+                    const itemTitle = lang === 'ar' ? item.title_ar : item.title_en;
+                    const itemSlug = (lang === 'ar' ? item.slug_ar : item.slug_en) || item.slug_ar || item.slug_en;
+                    return (
+                      <a
+                        key={item.id}
+                        href={itemSlug ? `/${lang}/blog/${itemSlug}` : '#'}
+                        className="block text-gray-500 hover:text-[#22C55E]"
+                      >
+                        • {itemTitle}
+                      </a>
+                    );
+                  })
+                ) : (
+                  <div className="text-gray-500">
+                    {lang === 'ar' ? 'لا توجد مقالات ذات صلة بعلامات مشتركة.' : 'No related blogs with mutual tags.'}
+                  </div>
+                )}
               </div>
-              <button className="mt-4 w-full rounded-lg bg-[#22C55E] px-4 py-2 text-xs font-bold text-[#0f172a]">
-                {lang === 'ar' ? 'عرض الفنادق' : 'View hotels'}
-              </button>
             </div>
           </div>
         </aside>

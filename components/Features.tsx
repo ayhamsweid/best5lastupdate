@@ -71,14 +71,14 @@ const Features: React.FC<{ config?: FeaturesConfig }> = ({ config }) => {
 
   const toneClasses = (tone?: string, idx = 0) => {
     const key = (tone || '').toLowerCase();
-    if (key === 'teal') return 'bg-teal-900/50 text-teal-400 border-teal-500/20';
-    if (key === 'emerald') return 'bg-emerald-900/50 text-emerald-400 border-emerald-500/20';
-    if (key === 'green') return 'bg-green-900/50 text-primary border-primary/20';
+    if (key === 'teal') return 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-900/50 dark:text-teal-400 dark:border-teal-500/20';
+    if (key === 'emerald') return 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-400 dark:border-emerald-500/20';
+    if (key === 'green') return 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/50 dark:text-primary dark:border-primary/20';
     return idx === 1
-      ? 'bg-teal-900/50 text-teal-400 border-teal-500/20'
+      ? 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-900/50 dark:text-teal-400 dark:border-teal-500/20'
       : idx === 2
-      ? 'bg-emerald-900/50 text-emerald-400 border-emerald-500/20'
-      : 'bg-green-900/50 text-primary border-primary/20';
+      ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-400 dark:border-emerald-500/20'
+      : 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/50 dark:text-primary dark:border-primary/20';
   };
 
   const pick = (value?: Localized) => value?.[lang] || value?.ar || value?.en || '';

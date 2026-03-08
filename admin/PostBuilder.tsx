@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { uploadImage, fetchUploads } from '../services/api';
+import { uploadImage, fetchUploads, fetchCategories, fetchTags, createCategory, createTag } from '../services/api';
 import { parseImportedPostJson } from '../utils/postJsonImport';
 
 type Lang = 'ar' | 'en';
@@ -80,6 +80,14 @@ const PostBuilder: React.FC<PostBuilderProps> = ({ values, onChange, onPreview, 
   const [showMedia, setShowMedia] = useState(false);
   const [mediaFiles, setMediaFiles] = useState<{ name: string; url: string }[]>([]);
   const [mediaTarget, setMediaTarget] = useState<{ type: 'cover' | 'image' | 'gallery'; blockId?: string } | null>(null);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [tags, setTags] = useState<any[]>([]);
+  const [newCategoryAr, setNewCategoryAr] = useState('');
+  const [newCategoryEn, setNewCategoryEn] = useState('');
+  const [newTagAr, setNewTagAr] = useState('');
+  const [newTagEn, setNewTagEn] = useState('');
+  const [creatingCategory, setCreatingCategory] = useState(false);
+  const [creatingTag, setCreatingTag] = useState(false);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const lastIdRef = useRef<string | null>(null);
 
@@ -116,6 +124,11 @@ const PostBuilder: React.FC<PostBuilderProps> = ({ values, onChange, onPreview, 
     if (!showMedia) return;
     fetchUploads().then(setMediaFiles).catch(() => setMediaFiles([]));
   }, [showMedia]);
+
+  useEffect(() => {
+    fetchCategories().then(setCategories).catch(() => setCategories([]));
+    fetchTags().then(setTags).catch(() => setTags([]));
+  }, []);
 
   const getLocalized = (value: Localized | undefined, fallback = '') => {
     if (typeof value === 'string') return value || fallback;
@@ -218,6 +231,15 @@ const PostBuilder: React.FC<PostBuilderProps> = ({ values, onChange, onPreview, 
 
   const [undoVersion, setUndoVersion] = useState(0);
   const canUndo = historyIndexRef.current > 0;
+  const selectedTagIds = useMemo(() => {
+    if (Array.isArray(values.tag_ids)) return values.tag_ids;
+    if (Array.isArray(values.tags)) {
+      return values.tags
+        .map((postTag: any) => postTag?.tag?.id || postTag?.tag_id)
+        .filter(Boolean);
+    }
+    return [];
+  }, [values.tag_ids, values.tags]);
 
   const undo = () => {
     if (!canUndo) return;
@@ -228,6 +250,48 @@ const PostBuilder: React.FC<PostBuilderProps> = ({ values, onChange, onPreview, 
     onChange(snapshot.values);
     isRestoringRef.current = false;
     setUndoVersion((v) => v + 1);
+  };
+
+  const toggleTag = (tagId: string) => {
+    const current = new Set(selectedTagIds);
+    if (current.has(tagId)) {
+      current.delete(tagId);
+    } else {
+      current.add(tagId);
+    }
+    update('tag_ids', Array.from(current));
+  };
+
+  const handleCreateCategory = async () => {
+    const nameAr = newCategoryAr.trim();
+    const nameEn = newCategoryEn.trim();
+    if (!nameAr || !nameEn) return;
+    setCreatingCategory(true);
+    try {
+      const created = await createCategory({ name_ar: nameAr, name_en: nameEn });
+      setCategories((prev) => [created, ...prev.filter((item) => item.id !== created.id)]);
+      update('category_id', created.id);
+      setNewCategoryAr('');
+      setNewCategoryEn('');
+    } finally {
+      setCreatingCategory(false);
+    }
+  };
+
+  const handleCreateTag = async () => {
+    const nameAr = newTagAr.trim();
+    const nameEn = newTagEn.trim();
+    if (!nameAr || !nameEn) return;
+    setCreatingTag(true);
+    try {
+      const created = await createTag({ name_ar: nameAr, name_en: nameEn });
+      setTags((prev) => [created, ...prev.filter((item) => item.id !== created.id)]);
+      update('tag_ids', Array.from(new Set([...selectedTagIds, created.id])));
+      setNewTagAr('');
+      setNewTagEn('');
+    } finally {
+      setCreatingTag(false);
+    }
   };
 
   const importFromJsonFile = async (file?: File | null) => {
@@ -1135,18 +1199,18 @@ const PostBuilder: React.FC<PostBuilderProps> = ({ values, onChange, onPreview, 
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
           <div className="font-black">{contentLang === 'ar' ? 'محرر المقال' : 'Post Builder'}</div>
           <div className="flex items-center gap-3">
-            <button onClick={() => setContentLang('ar')} className={`px-3 py-1 rounded-full text-xs ${contentLang === 'ar' ? 'bg-primary text-[#0f172a]' : 'bg-white/10 text-white'}`}>
+            <button onClick={() => setContentLang('ar')} className={`px-3 py-1 rounded-full text-xs ${contentLang === 'ar' ? 'bg-primary text-[#0f172a]' : 'bg-[#F3F4F6] text-[#111827] dark:bg-white/10 dark:text-white'}`}>
               AR
             </button>
-            <button onClick={() => setContentLang('en')} className={`px-3 py-1 rounded-full text-xs ${contentLang === 'en' ? 'bg-primary text-[#0f172a]' : 'bg-white/10 text-white'}`}>
+            <button onClick={() => setContentLang('en')} className={`px-3 py-1 rounded-full text-xs ${contentLang === 'en' ? 'bg-primary text-[#0f172a]' : 'bg-[#F3F4F6] text-[#111827] dark:bg-white/10 dark:text-white'}`}>
               EN
             </button>
-            <button onClick={undo} disabled={!canUndo} className="bg-white/10 text-white px-3 py-1.5 rounded-full text-xs border border-white/10 hover:bg-white/20 transition disabled:opacity-40 disabled:cursor-not-allowed">
+            <button onClick={undo} disabled={!canUndo} className="bg-[#F3F4F6] text-[#111827] dark:bg-white/10 dark:text-white px-3 py-1.5 rounded-full text-xs border border-[#E5E7EB] dark:border-white/10 hover:bg-[#E5E7EB] dark:hover:bg-white/20 transition disabled:opacity-40 disabled:cursor-not-allowed">
               Undo
             </button>
             <button
               onClick={() => importInputRef.current?.click()}
-              className="bg-white/10 text-white px-3 py-1.5 rounded-full text-xs border border-white/10 hover:bg-white/20 transition"
+              className="bg-[#F3F4F6] text-[#111827] dark:bg-white/10 dark:text-white px-3 py-1.5 rounded-full text-xs border border-[#E5E7EB] dark:border-white/10 hover:bg-[#E5E7EB] dark:hover:bg-white/20 transition"
             >
               Import JSON
             </button>
@@ -1160,18 +1224,18 @@ const PostBuilder: React.FC<PostBuilderProps> = ({ values, onChange, onPreview, 
                 e.currentTarget.value = '';
               }}
             />
-            <button onClick={() => onPreview({ values: latestValuesRef.current, lang: contentLang, blocks })} className="bg-white/10 text-white px-3 py-1.5 rounded-full text-xs border border-white/10 hover:bg-white/20 transition">
+            <button onClick={() => onPreview({ values: latestValuesRef.current, lang: contentLang, blocks })} className="bg-[#F3F4F6] text-[#111827] dark:bg-white/10 dark:text-white px-3 py-1.5 rounded-full text-xs border border-[#E5E7EB] dark:border-white/10 hover:bg-[#E5E7EB] dark:hover:bg-white/20 transition">
               Preview
             </button>
             {onPreviewPublic && (
               <button
                 onClick={() => onPreviewPublic({ values: latestValuesRef.current, lang: contentLang, blocks })}
-                className="bg-white/10 text-white px-3 py-1.5 rounded-full text-xs border border-white/10 hover:bg-white/20 transition"
+                className="bg-[#F3F4F6] text-[#111827] dark:bg-white/10 dark:text-white px-3 py-1.5 rounded-full text-xs border border-[#E5E7EB] dark:border-white/10 hover:bg-[#E5E7EB] dark:hover:bg-white/20 transition"
               >
                 Preview (Site)
               </button>
             )}
-            <button onClick={onSaveDraft} className="bg-white/10 text-white px-3 py-1.5 rounded-full text-xs border border-white/10 hover:bg-white/20 transition">
+            <button onClick={onSaveDraft} className="bg-[#F3F4F6] text-[#111827] dark:bg-white/10 dark:text-white px-3 py-1.5 rounded-full text-xs border border-[#E5E7EB] dark:border-white/10 hover:bg-[#E5E7EB] dark:hover:bg-white/20 transition">
               Save Draft
             </button>
             <button onClick={onPublish} className="bg-primary text-[#0f172a] px-3 py-1.5 rounded-full text-xs font-semibold">
@@ -1180,6 +1244,96 @@ const PostBuilder: React.FC<PostBuilderProps> = ({ values, onChange, onPreview, 
           </div>
         </div>
       </div>
+
+      <section className="max-w-7xl mx-auto px-6 pt-6">
+        <div className="rounded-2xl border border-[#E5E7EB] dark:border-white/10 bg-white dark:bg-[#111827] p-4 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="text-xs font-semibold text-gray-600 dark:text-gray-300">Category</div>
+              <select
+                className="w-full bg-[#F9FAFB] dark:bg-white/10 border border-[#E5E7EB] dark:border-white/10 rounded-lg px-3 py-2 text-sm"
+                value={values.category_id || ''}
+                onChange={(e) => update('category_id', e.target.value || null)}
+              >
+                <option value="">No Category</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {(cat.name_en || cat.name_ar) ?? 'Untitled'}
+                  </option>
+                ))}
+              </select>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <input
+                  className="sm:col-span-1 bg-[#F9FAFB] dark:bg-white/10 border border-[#E5E7EB] dark:border-white/10 rounded-lg px-3 py-2 text-sm"
+                  placeholder="New Category AR"
+                  value={newCategoryAr}
+                  onChange={(e) => setNewCategoryAr(e.target.value)}
+                />
+                <input
+                  className="sm:col-span-1 bg-[#F9FAFB] dark:bg-white/10 border border-[#E5E7EB] dark:border-white/10 rounded-lg px-3 py-2 text-sm"
+                  placeholder="New Category EN"
+                  value={newCategoryEn}
+                  onChange={(e) => setNewCategoryEn(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={handleCreateCategory}
+                  disabled={creatingCategory || !newCategoryAr.trim() || !newCategoryEn.trim()}
+                  className="bg-primary text-[#0f172a] rounded-lg px-3 py-2 text-sm font-semibold disabled:opacity-60"
+                >
+                  {creatingCategory ? 'Adding...' : 'Add Category'}
+                </button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="text-xs font-semibold text-gray-600 dark:text-gray-300">Tags</div>
+              <div className="max-h-28 overflow-auto rounded-lg border border-[#E5E7EB] dark:border-white/10 p-2 bg-[#F9FAFB] dark:bg-white/5">
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag) => {
+                    const active = selectedTagIds.includes(tag.id);
+                    return (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() => toggleTag(tag.id)}
+                        className={`px-3 py-1 rounded-full text-xs border ${
+                          active
+                            ? 'bg-[#22C55E]/20 border-[#22C55E]/30 text-[#14532d] dark:text-[#86efac]'
+                            : 'bg-white dark:bg-white/10 border-[#E5E7EB] dark:border-white/10 text-gray-600 dark:text-gray-300'
+                        }`}
+                      >
+                        {tag.name_en || tag.name_ar}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <input
+                  className="sm:col-span-1 bg-[#F9FAFB] dark:bg-white/10 border border-[#E5E7EB] dark:border-white/10 rounded-lg px-3 py-2 text-sm"
+                  placeholder="New Tag AR"
+                  value={newTagAr}
+                  onChange={(e) => setNewTagAr(e.target.value)}
+                />
+                <input
+                  className="sm:col-span-1 bg-[#F9FAFB] dark:bg-white/10 border border-[#E5E7EB] dark:border-white/10 rounded-lg px-3 py-2 text-sm"
+                  placeholder="New Tag EN"
+                  value={newTagEn}
+                  onChange={(e) => setNewTagEn(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={handleCreateTag}
+                  disabled={creatingTag || !newTagAr.trim() || !newTagEn.trim()}
+                  className="bg-primary text-[#0f172a] rounded-lg px-3 py-2 text-sm font-semibold disabled:opacity-60"
+                >
+                  {creatingTag ? 'Adding...' : 'Add Tag'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <div className="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
         <div className="space-y-8">

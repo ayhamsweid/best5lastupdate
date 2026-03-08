@@ -32,6 +32,11 @@ export class CreatePostDto {
   category_id?: string;
 
   @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tag_ids?: string[];
+
+  @IsOptional()
   @IsString()
   seo_title_ar?: string;
 

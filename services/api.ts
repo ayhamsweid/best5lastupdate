@@ -2,6 +2,39 @@ import type { AuthUser } from '../context/AuthContext';
 
 const API_BASE = '/api';
 
+const extractApiErrorMessage = (status: number, raw: string) => {
+  let message = raw?.trim() || '';
+  if (message) {
+    try {
+      const parsed = JSON.parse(message);
+      if (typeof parsed?.message === 'string') {
+        message = parsed.message;
+      } else if (Array.isArray(parsed?.message) && parsed.message.length) {
+        message = String(parsed.message[0]);
+      }
+    } catch {
+      // Keep original text when response is not JSON.
+    }
+  }
+
+  const lower = message.toLowerCase();
+
+  if (status === 401 || /invalid credentials|unauthorized/.test(lower)) {
+    return 'كلمة المرور أو البريد الإلكتروني غير صحيح.';
+  }
+  if (status === 403 && /csrf/.test(lower)) {
+    return 'انتهت الجلسة أو فشل التحقق الأمني. حدّث الصفحة وحاول مرة أخرى.';
+  }
+  if (status === 429) {
+    return 'تم تجاوز عدد المحاولات المسموح. حاول مرة أخرى بعد قليل.';
+  }
+  if (status >= 500) {
+    return 'حدث خطأ في الخادم. حاول مرة أخرى.';
+  }
+
+  return message || 'تعذر إتمام العملية. حاول مرة أخرى.';
+};
+
 const getCsrfToken = () => {
   if (typeof document === 'undefined') return '';
   const match = document.cookie.split('; ').find((row) => row.startsWith('csrf_token='));
@@ -21,7 +54,7 @@ const request = async <T>(url: string, options: RequestInit = {}): Promise<T> =>
   });
   if (!res.ok) {
     const message = await res.text();
-    throw new Error(message || res.statusText);
+    throw new Error(extractApiErrorMessage(res.status, message));
   }
   return res.json() as Promise<T>;
 };
@@ -60,7 +93,7 @@ export const uploadImage = async (file: File) => {
   });
   if (!res.ok) {
     const message = await res.text();
-    throw new Error(message || res.statusText);
+    throw new Error(extractApiErrorMessage(res.status, message));
   }
   return res.json() as Promise<{ url: string }>;
 };
@@ -83,10 +116,18 @@ export const fetchCategories = () => request('/categories');
 export const fetchPublicCategories = () => request('/categories/public');
 export const createCategory = (payload: Record<string, unknown>) =>
   request('/categories', { method: 'POST', body: JSON.stringify(payload) });
+export const updateCategory = (id: string, payload: Record<string, unknown>) =>
+  request(`/categories/${id}`, { method: 'PATCH', body: JSON.stringify(payload) });
+export const deleteCategory = (id: string) =>
+  request(`/categories/${id}`, { method: 'DELETE' });
 
 export const fetchTags = () => request('/tags');
 export const createTag = (payload: Record<string, unknown>) =>
   request('/tags', { method: 'POST', body: JSON.stringify(payload) });
+export const updateTag = (id: string, payload: Record<string, unknown>) =>
+  request(`/tags/${id}`, { method: 'PATCH', body: JSON.stringify(payload) });
+export const deleteTag = (id: string) =>
+  request(`/tags/${id}`, { method: 'DELETE' });
 
 export const fetchUsers = () => request('/users');
 export const createUser = (payload: Record<string, unknown>) =>
@@ -133,7 +174,7 @@ export const downloadDbBackup = async () => {
   const res = await fetch(`${API_BASE}/db-tools/backup`, { method: 'POST', credentials: 'include' });
   if (!res.ok) {
     const message = await res.text();
-    throw new Error(message || res.statusText);
+    throw new Error(extractApiErrorMessage(res.status, message));
   }
   return res.blob();
 };
@@ -150,7 +191,7 @@ export const restoreDbBackup = async (file: File) => {
   });
   if (!res.ok) {
     const message = await res.text();
-    throw new Error(message || res.statusText);
+    throw new Error(extractApiErrorMessage(res.status, message));
   }
   return res.json();
 };

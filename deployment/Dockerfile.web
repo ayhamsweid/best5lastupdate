@@ -1,10 +1,38 @@
-FROM node:20-alpine AS build
+FROM node:20-alpine AS deps
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --no-audit --no-fund
 
-COPY . .
+FROM deps AS build
+WORKDIR /app
+
+ARG NODE_OPTIONS=--max-old-space-size=384
+ENV NODE_OPTIONS=$NODE_OPTIONS
+ENV CI=true
+
+COPY index.html ./
+COPY index.tsx ./
+COPY App.tsx ./
+COPY types.ts ./
+COPY index.css ./
+COPY metadata.json ./
+COPY tsconfig.json ./
+COPY vite.config.ts ./
+COPY postcss.config.js ./
+COPY tailwind.config.js ./
+COPY admin ./admin
+COPY components ./components
+COPY context ./context
+COPY data ./data
+COPY hooks ./hooks
+COPY pages ./pages
+COPY public ./public
+COPY routes ./routes
+COPY services ./services
+COPY types ./types
+COPY utils ./utils
+
 RUN npm run build
 
 FROM nginx:1.27-alpine
@@ -13,4 +41,3 @@ COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 80
 EXPOSE 443
-

@@ -13,9 +13,11 @@ const PostCreatePage: React.FC = () => {
     try {
       const payload = { status: 'DRAFT', ...values, ...override };
       const post = await createPost(payload);
+      const flashMessage = override?.status === 'PUBLISHED' ? 'تم نشر المقال بنجاح.' : 'تم حفظ المقال بنجاح.';
+      sessionStorage.setItem('post_editor_flash', flashMessage);
       navigate(`/admin/posts/edit/${post.id}`);
     } catch (e: any) {
-      setError(e?.message || 'Failed to save');
+      setError(e?.message || 'تعذر حفظ المقال. حاول مرة أخرى.');
     }
   };
 

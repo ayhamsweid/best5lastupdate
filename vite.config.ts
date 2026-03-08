@@ -5,6 +5,16 @@ import react from '@vitejs/plugin-react';
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
+      build: {
+        target: 'es2020',
+        minify: 'esbuild',
+        cssMinify: 'esbuild',
+        sourcemap: false,
+        reportCompressedSize: false
+      },
+      esbuild: {
+        legalComments: 'none'
+      },
       server: {
         port: 3000,
         host: '0.0.0.0',

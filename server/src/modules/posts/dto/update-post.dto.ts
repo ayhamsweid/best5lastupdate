@@ -35,6 +35,11 @@ export class UpdatePostDto {
   category_id?: string;
 
   @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tag_ids?: string[];
+
+  @IsOptional()
   @IsString()
   cover_image_url?: string;
 

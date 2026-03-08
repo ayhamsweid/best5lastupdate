@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 
 const slugify = (value: string) =>
@@ -39,5 +39,50 @@ export class CategoriesService {
         slug_en
       }
     });
+  }
+
+  async update(id: string, data: { name_ar?: string; name_en?: string; icon?: string | null }) {
+    const current = await this.prisma.category.findUnique({ where: { id } });
+    if (!current) throw new NotFoundException('Category not found');
+
+    const nextNameAr = (data.name_ar ?? current.name_ar).trim();
+    const nextNameEn = (data.name_en ?? current.name_en).trim();
+    const nextIcon = data.icon === undefined ? current.icon : data.icon;
+    if (!nextNameAr || !nextNameEn) {
+      throw new BadRequestException('Both Arabic and English names are required');
+    }
+
+    const payload: any = {
+      name_ar: nextNameAr,
+      name_en: nextNameEn,
+      icon: nextIcon
+    };
+
+    if (nextNameAr !== current.name_ar) {
+      payload.slug_ar = await this.ensureUniqueSlug('slug_ar', slugify(nextNameAr || nextNameEn));
+    }
+    if (nextNameEn !== current.name_en) {
+      payload.slug_en = await this.ensureUniqueSlug('slug_en', slugify(nextNameEn || nextNameAr));
+    }
+
+    return this.prisma.category.update({
+      where: { id },
+      data: payload
+    });
+  }
+
+  async remove(id: string) {
+    const current = await this.prisma.category.findUnique({ where: { id } });
+    if (!current) throw new NotFoundException('Category not found');
+
+    await this.prisma.$transaction([
+      this.prisma.post.updateMany({
+        where: { category_id: id },
+        data: { category_id: null }
+      }),
+      this.prisma.category.delete({ where: { id } })
+    ]);
+
+    return current;
   }
 }

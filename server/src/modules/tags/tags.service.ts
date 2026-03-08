@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 
 const slugify = (value: string) =>
@@ -39,5 +39,45 @@ export class TagsService {
         slug_en
       }
     });
+  }
+
+  async update(id: string, data: { name_ar?: string; name_en?: string }) {
+    const current = await this.prisma.tag.findUnique({ where: { id } });
+    if (!current) throw new NotFoundException('Tag not found');
+
+    const nextNameAr = (data.name_ar ?? current.name_ar).trim();
+    const nextNameEn = (data.name_en ?? current.name_en).trim();
+    if (!nextNameAr || !nextNameEn) {
+      throw new BadRequestException('Both Arabic and English names are required');
+    }
+
+    const payload: any = {
+      name_ar: nextNameAr,
+      name_en: nextNameEn
+    };
+
+    if (nextNameAr !== current.name_ar) {
+      payload.slug_ar = await this.ensureUniqueSlug('slug_ar', slugify(nextNameAr || nextNameEn));
+    }
+    if (nextNameEn !== current.name_en) {
+      payload.slug_en = await this.ensureUniqueSlug('slug_en', slugify(nextNameEn || nextNameAr));
+    }
+
+    return this.prisma.tag.update({
+      where: { id },
+      data: payload
+    });
+  }
+
+  async remove(id: string) {
+    const current = await this.prisma.tag.findUnique({ where: { id } });
+    if (!current) throw new NotFoundException('Tag not found');
+
+    await this.prisma.$transaction([
+      this.prisma.postTag.deleteMany({ where: { tag_id: id } }),
+      this.prisma.tag.delete({ where: { id } })
+    ]);
+
+    return current;
   }
 }

@@ -15,8 +15,13 @@ const LoginPage: React.FC = () => {
     try {
       await login(email, password);
       navigate('/admin/dashboard');
-    } catch (err) {
-      setError((err as Error).message || 'Login failed');
+    } catch (err: any) {
+      const msg = err?.message || '';
+      if (/invalid credentials|unauthorized/i.test(msg)) {
+        setError('كلمة المرور أو البريد الإلكتروني غير صحيح.');
+        return;
+      }
+      setError(msg || 'تعذر تسجيل الدخول. حاول مرة أخرى.');
     }
   };
 

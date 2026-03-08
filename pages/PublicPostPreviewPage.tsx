@@ -29,8 +29,8 @@ const PublicPostPreviewPage: React.FC = () => {
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-[#0b1224] text-white flex items-center justify-center">
-        <div className="text-sm text-gray-300">Loading preview...</div>
+      <div className="min-h-screen bg-[#F9FAFB] text-[#111827] dark:bg-[#0b1224] dark:text-white flex items-center justify-center">
+        <div className="text-sm text-gray-500 dark:text-gray-300">Loading preview...</div>
       </div>
     );
   }

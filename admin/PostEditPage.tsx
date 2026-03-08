@@ -7,6 +7,7 @@ const PostEditPage: React.FC = () => {
   const { id } = useParams();
   const [values, setValues] = useState<Record<string, any>>({});
   const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
   const [revisions, setRevisions] = useState<any[]>([]);
   const [revMessage, setRevMessage] = useState<string | null>(null);
 
@@ -22,15 +23,27 @@ const PostEditPage: React.FC = () => {
       .catch(() => setRevisions([]));
   }, [id]);
 
+  useEffect(() => {
+    const flash = sessionStorage.getItem('post_editor_flash');
+    if (!flash) return;
+    setMessage(flash);
+    sessionStorage.removeItem('post_editor_flash');
+    const timeout = window.setTimeout(() => setMessage(null), 3000);
+    return () => window.clearTimeout(timeout);
+  }, []);
+
   const onSave = async (override?: Record<string, any>) => {
     if (!id) return;
     setError(null);
+    setMessage(null);
     try {
       const payload = { ...values, ...override };
       const post = await updatePost(id, payload);
       setValues(post);
+      setMessage(override?.status === 'PUBLISHED' ? 'تم نشر المقال بنجاح.' : 'تم حفظ المقال بنجاح.');
+      setTimeout(() => setMessage(null), 2500);
     } catch (e: any) {
-      setError(e?.message || 'Failed to save');
+      setError(e?.message || 'تعذر حفظ المقال. حاول مرة أخرى.');
     }
   };
 
@@ -66,6 +79,7 @@ const PostEditPage: React.FC = () => {
 
   return (
     <div>
+      {message && <div className="text-xs text-green-300 mb-3">{message}</div>}
       {error && <div className="text-xs text-red-300 mb-3">{error}</div>}
       <PostBuilder
         values={values}

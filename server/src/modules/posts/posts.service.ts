@@ -58,7 +58,12 @@ export class PostsService {
           : {})
       },
       include: {
-        category: true
+        category: true,
+        tags: {
+          include: {
+            tag: true
+          }
+        }
       },
       orderBy: { published_at: 'desc' }
     });
@@ -73,7 +78,13 @@ export class PostsService {
         ...(lang === 'ar' ? { slug_ar: slug } : { slug_en: slug })
       },
       include: {
-        author: { select: { full_name: true } }
+        author: { select: { full_name: true } },
+        category: true,
+        tags: {
+          include: {
+            tag: true
+          }
+        }
       }
     });
     if (primary) return primary;
@@ -84,23 +95,49 @@ export class PostsService {
         ...(lang === 'ar' ? { slug_en: slug } : { slug_ar: slug })
       },
       include: {
-        author: { select: { full_name: true } }
+        author: { select: { full_name: true } },
+        category: true,
+        tags: {
+          include: {
+            tag: true
+          }
+        }
       }
     });
   }
 
   findOne(id: string) {
-    return this.prisma.post.findUnique({ where: { id } });
+    return this.prisma.post.findUnique({
+      where: { id },
+      include: {
+        category: true,
+        tags: {
+          include: {
+            tag: true
+          }
+        }
+      }
+    });
   }
 
   previewById(id: string) {
     return this.prisma.post.findUnique({
       where: { id },
-      include: { author: { select: { full_name: true } } }
+      include: {
+        author: { select: { full_name: true } },
+        category: true,
+        tags: {
+          include: {
+            tag: true
+          }
+        }
+      }
     });
   }
 
   create(authorId: string, data: CreatePostDto) {
+    const { tag_ids, ...rest } = data;
+    const normalizedTagIds = Array.isArray(tag_ids) ? Array.from(new Set(tag_ids.filter(Boolean))) : [];
     const slugEn = slugify(data.title_en);
     const slugAr = slugify(data.title_ar);
     const publishedAt = data.published_at ? new Date(data.published_at) : undefined;
@@ -108,7 +145,7 @@ export class PostsService {
     const now = new Date();
     return this.prisma.post.create({
       data: {
-        ...data,
+        ...rest,
         slug_en: slugEn,
         slug_ar: slugAr,
         author_id: authorId,
@@ -116,22 +153,43 @@ export class PostsService {
         scheduled_at: scheduledAt,
         content_blocks_json: data.content_blocks_json ?? undefined,
         content_ar: data.content_ar ?? '',
-        content_en: data.content_en ?? ''
+        content_en: data.content_en ?? '',
+        ...(normalizedTagIds.length
+          ? {
+              tags: {
+                create: normalizedTagIds.map((tagId) => ({ tag_id: tagId }))
+              }
+            }
+          : {})
       }
     });
   }
 
   update(id: string, data: UpdatePostDto) {
+    const { tag_ids, ...rest } = data;
+    const normalizedTagIds = Array.isArray(tag_ids) ? Array.from(new Set(tag_ids.filter(Boolean))) : undefined;
     const publishedAt = data.published_at ? new Date(data.published_at) : undefined;
     const scheduledAt = data.scheduled_at ? new Date(data.scheduled_at) : undefined;
     const now = new Date();
     return this.prisma.post.update({
       where: { id },
       data: {
-        ...data,
+        ...rest,
         published_at: data.status === PostStatus.PUBLISHED ? publishedAt || now : publishedAt,
         scheduled_at: scheduledAt,
-        content_blocks_json: data.content_blocks_json ?? undefined
+        content_blocks_json: data.content_blocks_json ?? undefined,
+        ...(normalizedTagIds !== undefined
+          ? {
+              tags: {
+                deleteMany: {},
+                ...(normalizedTagIds.length
+                  ? {
+                      create: normalizedTagIds.map((tagId) => ({ tag_id: tagId }))
+                    }
+                  : {})
+              }
+            }
+          : {})
       }
     });
   }
