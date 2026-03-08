@@ -11,8 +11,17 @@ const MediaPage: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [selectedSet, setSelectedSet] = useState<Record<string, boolean>>({});
 
+  const reloadFiles = async () => {
+    try {
+      const next = await fetchUploads();
+      setFiles(next);
+    } catch {
+      setFiles([]);
+    }
+  };
+
   useEffect(() => {
-    fetchUploads().then(setFiles).catch(() => setFiles([]));
+    reloadFiles();
   }, []);
 
   const filtered = useMemo(() => {
@@ -85,22 +94,27 @@ const MediaPage: React.FC = () => {
   const onDelete = async (file: { name: string; url: string; usage_count?: number }) => {
     const inUse = (file.usage_count || 0) > 0;
     if (!confirm('Delete this image?')) return;
-    const firstAttempt = await deleteWithFallbackNames(file);
-    let deleted = firstAttempt.deleted;
-    if (firstAttempt.result?.reason === 'in_use' && inUse) {
-      const force = confirm('This image is used in content. Force delete?');
-      if (!force) return;
-      const forced = await deleteWithFallbackNames(file, true);
-      deleted = forced.deleted;
+    try {
+      const firstAttempt = await deleteWithFallbackNames(file);
+      let deleted = firstAttempt.deleted;
+      if (firstAttempt.result?.reason === 'in_use' && inUse) {
+        const force = confirm('This image is used in content. Force delete?');
+        if (!force) return;
+        const forced = await deleteWithFallbackNames(file, true);
+        deleted = forced.deleted;
+      }
+      await reloadFiles();
+      if (deleted) {
+        setMessage('Deleted successfully');
+        setTimeout(() => setMessage(null), 2000);
+        return;
+      }
+      setMessage('Delete failed');
+      setTimeout(() => setMessage(null), 3000);
+    } catch (e: any) {
+      setMessage(e?.message || 'Delete failed');
+      setTimeout(() => setMessage(null), 3500);
     }
-    if (deleted) {
-      setFiles((prev) => prev.filter((f) => f.name !== file.name));
-      setMessage('Deleted successfully');
-      setTimeout(() => setMessage(null), 2000);
-      return;
-    }
-    setMessage('Delete failed');
-    setTimeout(() => setMessage(null), 3000);
   };
 
   const compressImage = async (file: File, maxWidth = 1600, quality = 0.8) => {
@@ -157,75 +171,77 @@ const MediaPage: React.FC = () => {
     const deleted = new Set<string>();
     const inUse: string[] = [];
     const failed: string[] = [];
-
-    await Promise.all(
-      selectedNames.map(async (name) => {
-        const file = files.find((item) => item.name === name);
-        if (!file) {
-          failed.push(name);
-          return;
-        }
-        try {
-          const result = await deleteWithFallbackNames(file);
-          if (result.deleted) {
-            deleted.add(name);
+    try {
+      await Promise.all(
+        selectedNames.map(async (name) => {
+          const file = files.find((item) => item.name === name);
+          if (!file) {
+            failed.push(name);
             return;
           }
-          if (result.result?.reason === 'in_use') {
-            inUse.push(name);
-            return;
-          }
-          failed.push(name);
-        } catch {
-          failed.push(name);
-        }
-      })
-    );
-
-    if (inUse.length > 0) {
-      const force = confirm(`${inUse.length} selected images are used in content. Force delete them?`);
-      if (force) {
-        await Promise.all(
-          inUse.map(async (name) => {
-            const file = files.find((item) => item.name === name);
-            if (!file) {
-              failed.push(name);
+          try {
+            const result = await deleteWithFallbackNames(file);
+            if (result.deleted) {
+              deleted.add(name);
               return;
             }
-            try {
-              const result = await deleteWithFallbackNames(file, true);
-              if (result.deleted) {
-                deleted.add(name);
+            if (result.result?.reason === 'in_use') {
+              inUse.push(name);
+              return;
+            }
+            failed.push(name);
+          } catch {
+            failed.push(name);
+          }
+        })
+      );
+
+      if (inUse.length > 0) {
+        const force = confirm(`${inUse.length} selected images are used in content. Force delete them?`);
+        if (force) {
+          await Promise.all(
+            inUse.map(async (name) => {
+              const file = files.find((item) => item.name === name);
+              if (!file) {
+                failed.push(name);
                 return;
               }
-              failed.push(name);
-            } catch {
-              failed.push(name);
-            }
-          })
-        );
+              try {
+                const result = await deleteWithFallbackNames(file, true);
+                if (result.deleted) {
+                  deleted.add(name);
+                  return;
+                }
+                failed.push(name);
+              } catch {
+                failed.push(name);
+              }
+            })
+          );
+        }
       }
-    }
+      await reloadFiles();
 
-    if (deleted.size > 0) {
-      setFiles((prev) => prev.filter((f) => !deleted.has(f.name)));
-    }
-    setSelectedSet({});
+      if (failed.length > 0) {
+        setMessage(`Deleted ${deleted.size}. Failed ${failed.length}.`);
+        setTimeout(() => setMessage(null), 3500);
+        return;
+      }
 
-    if (failed.length > 0) {
-      setMessage(`Deleted ${deleted.size}. Failed ${failed.length}.`);
-      setTimeout(() => setMessage(null), 3500);
-      return;
-    }
+      if (deleted.size > 0) {
+        setMessage(`Deleted ${deleted.size} image(s).`);
+        setTimeout(() => setMessage(null), 2500);
+        return;
+      }
 
-    if (deleted.size > 0) {
-      setMessage(`Deleted ${deleted.size} image(s).`);
+      setMessage('No images were deleted.');
       setTimeout(() => setMessage(null), 2500);
-      return;
+    } catch (e: any) {
+      setMessage(e?.message || 'Delete failed');
+      setTimeout(() => setMessage(null), 3500);
+    } finally {
+      setSelectedSet({});
     }
-
-    setMessage('No images were deleted.');
-    setTimeout(() => setMessage(null), 2500);
   };
 
   return (
