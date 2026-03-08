@@ -1,18 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import type { LucideIcon } from 'lucide-react';
 import {
-  Beef,
-  Coffee,
-  Croissant,
-  Drumstick,
-  Fish,
   Folder,
-  IceCreamCone,
-  Pizza,
-  Soup,
-  Utensils,
-  UtensilsCrossed
 } from 'lucide-react';
+import { DynamicIcon, iconNames } from 'lucide-react/dynamic';
 import { Link } from 'react-router-dom';
 import { useLang } from '../hooks/useLang';
 import { fetchPublicCategories } from '../services/api';
@@ -42,22 +32,7 @@ const Categories: React.FC = () => {
   );
 
   const list = categories.length ? categories : fallback;
-
-  const iconMap = useMemo<Record<string, LucideIcon>>(
-    () => ({
-      beef: Beef,
-      coffee: Coffee,
-      croissant: Croissant,
-      drumstick: Drumstick,
-      fish: Fish,
-      'ice-cream-cone': IceCreamCone,
-      pizza: Pizza,
-      soup: Soup,
-      utensils: Utensils,
-      'utensils-crossed': UtensilsCrossed
-    }),
-    []
-  );
+  const iconSet = useMemo(() => new Set(iconNames), []);
   const normalizeIconName = (value?: string | null) => {
     const raw = (value || '').trim();
     if (!raw) return null;
@@ -71,7 +46,8 @@ const Categories: React.FC = () => {
   };
   const resolveIconName = (value?: string | null) => {
     const name = normalizeIconName(value);
-    return name ? iconMap[name] || null : null;
+    if (!name) return null;
+    return iconSet.has(name) ? name : null;
   };
 
   const renderIcon = (value?: string | null) => {
@@ -79,8 +55,8 @@ const Categories: React.FC = () => {
     if (value.startsWith('http') || value.startsWith('/')) {
       return <img src={value} alt="" className="w-6 h-6 object-contain" />;
     }
-    const ResolvedIcon = resolveIconName(value);
-    if (ResolvedIcon) return <ResolvedIcon className="w-6 h-6" aria-hidden="true" />;
+    const resolved = resolveIconName(value);
+    if (resolved) return <DynamicIcon name={resolved} className="w-6 h-6" fallback={() => <Folder className="w-6 h-6" aria-hidden="true" />} />;
     return <Folder className="w-6 h-6" aria-hidden="true" />;
   };
 
