@@ -114,6 +114,8 @@ export const createPost = (payload: Record<string, unknown>) =>
   request('/posts', { method: 'POST', body: JSON.stringify(payload) });
 export const updatePost = (id: string, payload: Record<string, unknown>) =>
   request(`/posts/${id}`, { method: 'PATCH', body: JSON.stringify(payload) });
+export const deletePost = (id: string) =>
+  request<{ ok: boolean }>(`/posts/${id}`, { method: 'DELETE' });
 
 export const fetchCategories = () => request('/categories');
 export const fetchPublicCategories = () => request('/categories/public');

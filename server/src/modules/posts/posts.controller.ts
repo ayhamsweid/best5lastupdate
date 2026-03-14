@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, ForbiddenException, Get, Param, Patch, Post, Query, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, NotFoundException, Param, Patch, Post, Query, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { PostStatus, UserRole } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -190,5 +190,24 @@ export class PostsController {
     const updated = await this.posts.restoreRevision(id, revisionId);
     await this.logs.log(user.id, 'UPDATE', 'POST', id, before, updated);
     return updated;
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.CONTENT_WRITER, UserRole.EDITOR, UserRole.CHIEF_EDITOR)
+  @Delete(':id')
+  async remove(@Param('id') id: string, @CurrentUser() user: any) {
+    const before = await this.posts.findOne(id);
+    if (!before) {
+      throw new NotFoundException('Post not found');
+    }
+    if (![PostStatus.DRAFT, PostStatus.PUBLISHED].includes(before.status)) {
+      throw new BadRequestException('Only draft or published posts can be deleted');
+    }
+    if (before.status === PostStatus.PUBLISHED && ![UserRole.ADMIN, UserRole.CHIEF_EDITOR].includes(user.role)) {
+      throw new ForbiddenException('Only admin or chief editor can delete published posts');
+    }
+    const result = await this.posts.remove(id);
+    await this.logs.log(user.id, 'DELETE', 'POST', id, before, result);
+    return result;
   }
 }

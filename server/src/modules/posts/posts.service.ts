@@ -342,4 +342,19 @@ export class PostsService {
       }
     });
   }
+
+  async remove(id: string) {
+    const existing = await this.prisma.post.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('Post not found');
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.postTag.deleteMany({ where: { post_id: id } }),
+      this.prisma.postRevision.deleteMany({ where: { post_id: id } }),
+      this.prisma.post.delete({ where: { id } })
+    ]);
+
+    return { ok: true };
+  }
 }
