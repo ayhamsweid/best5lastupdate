@@ -200,7 +200,7 @@ export class PostsController {
     if (!before) {
       throw new NotFoundException('Post not found');
     }
-    if (![PostStatus.DRAFT, PostStatus.PUBLISHED].includes(before.status)) {
+    if (before.status !== PostStatus.DRAFT && before.status !== PostStatus.PUBLISHED) {
       throw new BadRequestException('Only draft or published posts can be deleted');
     }
     if (before.status === PostStatus.PUBLISHED && ![UserRole.ADMIN, UserRole.CHIEF_EDITOR].includes(user.role)) {
