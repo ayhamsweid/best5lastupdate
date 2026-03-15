@@ -27,7 +27,7 @@ services:
 
   public:
     build:
-      context: ../../best5-next
+      context: ../best5-next
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
