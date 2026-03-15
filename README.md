@@ -31,19 +31,19 @@ Public site + Admin panel + NestJS API in a single repo.
 
 ## Production Deployment
 
-- Public website: Next.js SSR app in `../best5-next`
-- Admin: legacy Vite SPA under `/admin`
+- Default production stack: single Vite SPA + NestJS API from this repo via `deployment/docker-compose.prod.yml`
+- Current live frontend image builds with `deployment/Dockerfile.web.prod`
 - API: NestJS under `/api`
 - Uploads: served from `/uploads`
-- Gateway: nginx routes public traffic to Next.js and `/admin` to the legacy SPA
-- Next.js server components should use `API_INTERNAL_BASE_URL`
-- Any future browser-side fetches in Next should use `/api`, not `http://server:4000/api`
+- If you later restore the separate Next.js repo at `../best5-next`, use `deployment/docker-compose.next-stack.yml`
+- In that split stack, Next.js server components should use `API_INTERNAL_BASE_URL`
+- In that split stack, browser-side fetches in Next should use `/api`, not `http://server:4000/api`
 
 Suggested cutover:
 1. Build and run `deployment/docker-compose.prod.yml`
-2. Verify `/ar`, `/en`, article URLs, category URLs, `/robots.txt`, and `/sitemap.xml`
-3. Verify `/admin` still loads correctly
-4. Check raw HTML with `view-source:` and `curl`
+2. Verify the main frontend and `/admin` load correctly
+3. Verify `/api`, `/uploads`, and `/sitemap.xml`
+4. If using the split Next.js deployment, verify `/ar`, `/en`, article URLs, category URLs, `/robots.txt`, and `/_next/*`
 
 ## Routing
 
