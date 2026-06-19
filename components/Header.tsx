@@ -77,6 +77,8 @@ const Header: React.FC = () => {
     [config, lang]
   );
 
+  const logoUrl = config?.logoImageUrl || '/images/site-icon.png';
+
   return (
     <header
       className={[
@@ -89,11 +91,7 @@ const Header: React.FC = () => {
         {/* Logo Area */}
         <Link to={`/${lang}`} className="flex items-center gap-3">
           <div className="bg-primary p-2 rounded-lg">
-            {config?.logoImageUrl ? (
-              <img src={config.logoImageUrl} alt="" className="w-6 h-6 object-contain" />
-            ) : (
-              <Compass className="text-white w-6 h-6" />
-            )}
+            <img src={logoUrl} alt={logoTitle} className="w-8 h-8 object-contain" />
           </div>
           <div className="text-gray-900 dark:text-white">
             <h1 className="text-xl font-black leading-none">{logoTitle}</h1>
