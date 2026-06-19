@@ -1454,14 +1454,20 @@ const PostBuilder: React.FC<PostBuilderProps> = ({ values, onChange, onPreview, 
           </div>
 
           <div className="rounded-2xl bg-white border border-[#E5E7EB] p-4 shadow-sm dark:bg-[#111827] dark:border-white/10">
-            <div className="text-xs text-gray-400 mb-3">Post Settings</div>
-            <input className="w-full bg-white/10 border border-white/10 rounded-lg px-3 py-2 text-sm" placeholder="Cover Image URL" value={values.cover_image_url || ''} onChange={(e) => update('cover_image_url', e.target.value)} />
-            <div className="flex items-center gap-2 mt-2">
-              <button className="text-xs px-3 py-1 rounded-full bg-white/10 border border-white/10" onClick={() => openMedia({ type: 'cover' })}>
-                Choose from Media
-              </button>
-              <input type="file" accept="image/*" className="text-xs text-gray-300" onChange={(e) => handleUpload('cover', (url) => update('cover_image_url', url), e.target.files?.[0])} />
-            </div>
+              <div className="text-xs text-gray-400 mb-3">Post Settings</div>
+              <input className="w-full bg-white/10 border border-white/10 rounded-lg px-3 py-2 text-sm" placeholder="Cover Image URL" value={values.cover_image_url || ''} onChange={(e) => update('cover_image_url', e.target.value)} />
+              <div className="flex items-center gap-2 mt-2">
+                <button className="text-xs px-3 py-1 rounded-full bg-white/10 border border-white/10" onClick={() => openMedia({ type: 'cover' })}>
+                  Choose from Media
+                </button>
+                <input type="file" accept="image/*" className="text-xs text-gray-300" onChange={(e) => handleUpload('cover', (url) => update('cover_image_url', url), e.target.files?.[0])} />
+              </div>
+
+              <div className="mt-3 text-xs text-gray-400 mb-2">SEO / Meta</div>
+              <input className="w-full bg-white/10 border border-white/10 rounded-lg px-3 py-2 text-sm" placeholder="SEO Title (AR)" value={values.seo_title_ar || ''} onChange={(e) => update('seo_title_ar', e.target.value)} />
+              <input className="w-full mt-2 bg-white/10 border border-white/10 rounded-lg px-3 py-2 text-sm" placeholder="SEO Title (EN)" value={values.seo_title_en || ''} onChange={(e) => update('seo_title_en', e.target.value)} />
+              <textarea rows={3} className="w-full mt-2 bg-white/10 border border-white/10 rounded-lg px-3 py-2 text-sm" placeholder="SEO Description (AR)" value={values.seo_desc_ar || ''} onChange={(e) => update('seo_desc_ar', e.target.value)} />
+              <textarea rows={3} className="w-full mt-2 bg-white/10 border border-white/10 rounded-lg px-3 py-2 text-sm" placeholder="SEO Description (EN)" value={values.seo_desc_en || ''} onChange={(e) => update('seo_desc_en', e.target.value)} />
           </div>
         </aside>
       </div>

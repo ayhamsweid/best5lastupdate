@@ -1510,6 +1510,10 @@ const PostEditor: React.FC<PostEditorProps> = ({ values, onChange }) => {
         <input className="bg-white/10 border border-white/10 rounded-lg px-4 py-2 text-sm" placeholder="Title (EN)" value={values.title_en || ''} onChange={(e) => update('title_en', e.target.value)} />
         <input className="bg-white/10 border border-white/10 rounded-lg px-4 py-2 text-sm" placeholder="Excerpt (AR)" value={values.excerpt_ar || ''} onChange={(e) => update('excerpt_ar', e.target.value)} />
         <input className="bg-white/10 border border-white/10 rounded-lg px-4 py-2 text-sm" placeholder="Excerpt (EN)" value={values.excerpt_en || ''} onChange={(e) => update('excerpt_en', e.target.value)} />
+        <input className="bg-white/10 border border-white/10 rounded-lg px-4 py-2 text-sm" placeholder="SEO Title (AR)" value={values.seo_title_ar || ''} onChange={(e) => update('seo_title_ar', e.target.value)} />
+        <input className="bg-white/10 border border-white/10 rounded-lg px-4 py-2 text-sm" placeholder="SEO Title (EN)" value={values.seo_title_en || ''} onChange={(e) => update('seo_title_en', e.target.value)} />
+        <textarea className="md:col-span-2 w-full bg-white/10 border border-white/10 rounded-lg px-4 py-2 text-sm" rows={3} placeholder="SEO Description (AR)" value={values.seo_desc_ar || ''} onChange={(e) => update('seo_desc_ar', e.target.value)} />
+        <textarea className="md:col-span-2 w-full mt-2 bg-white/10 border border-white/10 rounded-lg px-4 py-2 text-sm" rows={3} placeholder="SEO Description (EN)" value={values.seo_desc_en || ''} onChange={(e) => update('seo_desc_en', e.target.value)} />
         <div className="md:col-span-2 flex items-center gap-3">
           <input className="flex-1 bg-white/10 border border-white/10 rounded-lg px-4 py-2 text-sm" placeholder="Cover Image URL" value={values.cover_image_url || ''} onChange={(e) => update('cover_image_url', e.target.value)} />
           <button

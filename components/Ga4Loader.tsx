@@ -20,7 +20,13 @@ const Ga4Loader: React.FC<{ measurementId?: string | null }> = ({ measurementId 
             (window as any).dataLayer.push(args);
           };
         (window as any).gtag('js', new Date());
+        // Configure GA without automatic page_view, then explicitly send the initial page_view
         (window as any).gtag('config', measurementId, { send_page_view: false });
+        try {
+          (window as any).gtag('event', 'page_view', { page_path: window.location.pathname + window.location.search });
+        } catch (err) {
+          // ignore
+        }
       };
       document.head.appendChild(script);
     };
