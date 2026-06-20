@@ -91,7 +91,18 @@ const Header: React.FC = () => {
         {/* Logo Area */}
         <Link to={`/${lang}`} className="flex items-center gap-3">
           <div className="bg-primary p-2 rounded-lg">
-            <img src={logoUrl} alt={logoTitle} className="w-8 h-8 object-contain" />
+            <img
+              src={logoUrl}
+              alt={logoTitle}
+              className="w-8 h-8 object-contain"
+              onError={(e) => {
+                const target = e.currentTarget as HTMLImageElement;
+                if (target.src && !target.dataset.fallback) {
+                  target.dataset.fallback = '1';
+                  target.src = '/images/site-icon-fallback.svg';
+                }
+              }}
+            />
           </div>
           <div className="text-gray-900 dark:text-white">
             <h1 className="text-xl font-black leading-none">{logoTitle}</h1>

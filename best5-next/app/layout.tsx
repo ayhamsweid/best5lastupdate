@@ -1,8 +1,11 @@
 import { headers } from 'next/headers';
+import Script from 'next/script';
 import './globals.css';
 import { JsonLd } from '@/components/json-ld';
 import { defaultLang, dirForLang, isLang } from '@/lib/i18n';
 import { organizationSchema } from '@/lib/schema';
+
+const GA_MEASUREMENT_ID = 'G-ESX7XLJTB';
 
 export const metadata = {
   metadataBase: new URL('https://best5.com.tr')
@@ -21,6 +24,18 @@ export default async function RootLayout({
     <html lang={lang} dir={dirForLang(lang)}>
       <body>
         <JsonLd data={organizationSchema()} />
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GA_MEASUREMENT_ID}');
+          `}
+        </Script>
         {children}
       </body>
     </html>
