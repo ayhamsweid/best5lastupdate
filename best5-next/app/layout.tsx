@@ -5,7 +5,7 @@ import { JsonLd } from '@/components/json-ld';
 import { defaultLang, dirForLang, isLang } from '@/lib/i18n';
 import { organizationSchema } from '@/lib/schema';
 
-const GA_MEASUREMENT_ID = 'G-ESX7XLJTB';
+const GA_MEASUREMENT_ID = 'G-ESX7XLJTBP';
 
 export const metadata = {
   metadataBase: new URL('https://best5.com.tr')
