@@ -187,11 +187,19 @@ select {
   width: 64px;
   height: 64px;
   border-radius: 18px;
-  background: #22c55e;
+  background: #071226;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   box-shadow: 0 14px 30px rgba(34, 197, 94, 0.22);
+}
+
+.brand-mark__image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
 }
 
 .brand-mark__ring {
@@ -201,6 +209,7 @@ select {
   border-radius: 999px;
   position: relative;
   transform: rotate(-20deg);
+  display: none;
 }
 
 .brand-mark__ring::after {

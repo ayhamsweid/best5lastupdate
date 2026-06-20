@@ -76,6 +76,7 @@ export function SiteHeader({ lang }: { lang: Lang }) {
             <span>{labels.subtitle}</span>
           </span>
           <span className="brand-mark" aria-hidden="true">
+            <img className="brand-mark__image" src="/images/site-icon.png" alt="" />
             <span className="brand-mark__ring" />
           </span>
         </Link>
