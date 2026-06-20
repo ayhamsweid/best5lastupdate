@@ -8,7 +8,18 @@ import { organizationSchema } from '@/lib/schema';
 const GA_MEASUREMENT_ID = 'G-ESX7XLJTBP';
 
 export const metadata = {
-  metadataBase: new URL('https://best5.com.tr')
+  metadataBase: new URL('https://best5.com.tr'),
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/images/site-icon-32.png', type: 'image/png', sizes: '32x32' },
+      { url: '/images/site-icon-16.png', type: 'image/png', sizes: '16x16' },
+      { url: '/images/site-icon-fallback.svg', type: 'image/svg+xml' }
+    ],
+    shortcut: ['/favicon.ico'],
+    apple: [{ url: '/images/site-icon-180.png', sizes: '180x180', type: 'image/png' }]
+  },
+  manifest: '/site.webmanifest'
 };
 
 export default async function RootLayout({

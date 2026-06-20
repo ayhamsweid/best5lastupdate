@@ -1,83 +1,52 @@
 import fs from 'fs';
-import pngToIco from 'png-to-ico';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const rootDir = path.resolve(__dirname, '..');
 const inputs = [
-  'public/images/site-icon-32.png',
-  'public/images/site-icon-16.png'
-];
+  path.resolve(rootDir, 'public/images/site-icon-32.png'),
+  path.resolve(rootDir, 'public/images/site-icon-16.png')
+].filter((file) => fs.existsSync(file));
 
-async function run() {
-  try {
-    const buf = await pngToIco(inputs);
-    fs.writeFileSync('public/images/favicon.ico', buf);
-    console.log('favicon.ico generated at public/images/favicon.ico');
-  } catch (err) {
-    console.error('Failed to generate favicon.ico:', err);
-    process.exit(1);
-  }
-}
-
-run();
-const fs = require('fs');
-const path = require('path');
-
-const files = [
-  path.resolve(__dirname, '../public/images/site-icon-32.png'),
-  path.resolve(__dirname, '../public/images/site-icon-16.png')
-].filter(f => fs.existsSync(f));
-
-if (!files.length) {
+if (!inputs.length) {
   console.error('No PNG sources found at public/images/site-icon-32.png or site-icon-16.png');
   process.exit(2);
 }
 
-const images = files.map(f => ({ path: f, buf: fs.readFileSync(f) }));
-const count = images.length;
+const pngs = inputs.map((file) => ({
+  file,
+  data: fs.readFileSync(file),
+  size: Number(path.basename(file).match(/-(\d+)\.png$/)?.[1] || 32)
+}));
 
-// ICONDIR header (6 bytes)
 const header = Buffer.alloc(6);
-header.writeUInt16LE(0, 0); // reserved
-header.writeUInt16LE(1, 2); // type = 1 for icons
-header.writeUInt16LE(count, 4);
+header.writeUInt16LE(0, 0);
+header.writeUInt16LE(1, 2);
+header.writeUInt16LE(pngs.length, 4);
 
-const dirEntrySize = 16;
-const dir = Buffer.alloc(dirEntrySize * count);
-const imageDataBuffers = [];
-let offset = 6 + dirEntrySize * count;
+let offset = 6 + pngs.length * 16;
+const entries = pngs.map(({ data, size }) => {
+  const entry = Buffer.alloc(16);
+  entry.writeUInt8(size === 256 ? 0 : size, 0);
+  entry.writeUInt8(size === 256 ? 0 : size, 1);
+  entry.writeUInt8(0, 2);
+  entry.writeUInt8(0, 3);
+  entry.writeUInt16LE(1, 4);
+  entry.writeUInt16LE(32, 6);
+  entry.writeUInt32LE(data.length, 8);
+  entry.writeUInt32LE(offset, 12);
+  offset += data.length;
+  return entry;
+});
 
-for (let i = 0; i < images.length; i++) {
-  const img = images[i];
-  const b = img.buf;
-  const pngSize = b.length;
-  // Width and height bytes: if 256 use 0, but we have 32 and 16
-  const metadata = Buffer.alloc(dirEntrySize);
-  const imgSize = require('fs').statSync(img.path).size;
-  const fileName = path.basename(img.path);
+const ico = Buffer.concat([header, ...entries, ...pngs.map((png) => png.data)]);
+const outputs = [
+  path.resolve(rootDir, 'public/favicon.ico'),
+  path.resolve(rootDir, 'public/images/favicon.ico')
+];
 
-  // Extract width/height from filename fallback
-  let w = 0, h = 0;
-  if (fileName.match(/-(\d+)\.png$/)) {
-    w = parseInt(fileName.match(/-(\d+)\.png$/)[1], 10);
-    h = w;
-  } else {
-    w = 32; h = 32;
-  }
-
-  metadata.writeUInt8(w === 256 ? 0 : w, 0); // width
-  metadata.writeUInt8(h === 256 ? 0 : h, 1); // height
-  metadata.writeUInt8(0, 2); // color palette
-  metadata.writeUInt8(0, 3); // reserved
-  metadata.writeUInt16LE(1, 4); // color planes
-  metadata.writeUInt16LE(32, 6); // bits per pixel
-  metadata.writeUInt32LE(pngSize, 8); // size of image data
-  metadata.writeUInt32LE(offset, 12); // offset of image data
-
-  images[i].dir = metadata;
-  imageDataBuffers.push(b);
-  offset += pngSize;
+for (const output of outputs) {
+  fs.writeFileSync(output, ico);
+  console.log('favicon.ico written to', output);
 }
-
-const out = Buffer.concat([header, ...images.map(im => im.dir), ...imageDataBuffers]);
-const outPath = path.resolve(__dirname, '../public/images/favicon.ico');
-fs.writeFileSync(outPath, out);
-console.log('favicon.ico written to', outPath);

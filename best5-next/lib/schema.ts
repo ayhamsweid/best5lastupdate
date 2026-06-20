@@ -3,7 +3,8 @@ export function organizationSchema() {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'Best5',
-    url: 'https://best5.com.tr'
+    url: 'https://best5.com.tr',
+    logo: 'https://best5.com.tr/images/site-icon-192.png'
   };
 }
 
