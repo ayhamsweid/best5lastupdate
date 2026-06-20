@@ -20,7 +20,9 @@ export function middleware(request: NextRequest) {
 
   const segment = pathname.split('/')[1];
   if (!isLang(segment)) {
-    return NextResponse.redirect(new URL(`/${defaultLang}`, request.url), 308);
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = `/${defaultLang}${pathname.startsWith('/') ? pathname : `/${pathname}`}`;
+    return NextResponse.redirect(redirectUrl, 308);
   }
 
   const headers = new Headers(request.headers);

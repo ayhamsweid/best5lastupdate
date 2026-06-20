@@ -1,8 +1,8 @@
-import Link from 'next/link';
+import { HomeLanding } from '@/components/home-landing';
 import { JsonLd } from '@/components/json-ld';
 import { getCategories, getPosts, getPublicSettings } from '@/lib/api';
 import { defaultLang, isLang, type Lang } from '@/lib/i18n';
-import { buildMetadata, localePath } from '@/lib/seo';
+import { buildMetadata } from '@/lib/seo';
 import { itemListSchema } from '@/lib/schema';
 
 export const revalidate = 300;
@@ -46,53 +46,29 @@ export default async function HomePage({
       ? 'هذه الصفحة أصبحت تُرسل محتوى حقيقيًا في HTML الخام قبل أي JavaScript.'
       : 'This page now returns meaningful HTML before any JavaScript executes.');
   const latestPosts = posts.slice(0, 6);
+  const featuredPosts = latestPosts.slice(0, 3);
+  const heroImage =
+    hero?.backgroundUrl ||
+    featuredPosts[0]?.cover_image_url ||
+    featuredPosts[1]?.cover_image_url ||
+    featuredPosts[2]?.cover_image_url ||
+    '';
+  const placeholder = hero?.placeholder?.[lang] || (lang === 'ar' ? 'ماذا تريد أن تستكشف اليوم؟' : 'What do you want to explore today?');
+  const cta = hero?.cta?.[lang] || (lang === 'ar' ? 'بحث' : 'Search');
 
   return (
     <>
-      <section className="hero">
-        <h1>{title}</h1>
-        <p>{description}</p>
-      </section>
-
-      <section className="panel" style={{ marginTop: 24 }}>
-        <h2 className="section-title">{lang === 'ar' ? 'التصنيفات' : 'Categories'}</h2>
-        <ul className="card-grid">
-          {categories.map((category) => {
-            const slug = lang === 'ar' ? category.slug_ar : category.slug_en;
-            const name = lang === 'ar' ? category.name_ar : category.name_en;
-            return (
-              <li className="article-card" key={category.id}>
-                <h3>{name}</h3>
-                <p className="muted">{lang === 'ar' ? 'صفحة تصنيف قابلة للزحف من الـ HTML الخام.' : 'Category page linked directly in raw HTML.'}</p>
-                <Link href={localePath(lang, `category/${slug}`)}>
-                  {lang === 'ar' ? 'عرض التصنيف' : 'View category'}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
-
-      <section className="panel" style={{ marginTop: 24 }}>
-        <h2 className="section-title">{lang === 'ar' ? 'أحدث المقالات' : 'Latest Articles'}</h2>
-        <ul className="card-grid">
-          {latestPosts.map((post) => {
-            const slug = lang === 'ar' ? post.slug_ar : post.slug_en;
-            const postTitle = lang === 'ar' ? post.title_ar : post.title_en;
-            const excerpt = lang === 'ar' ? post.excerpt_ar : post.excerpt_en;
-            return (
-              <li className="article-card" key={post.id}>
-                <article>
-                  <h3>
-                    <Link href={localePath(lang, `blog/${slug}`)}>{postTitle}</Link>
-                  </h3>
-                  <p>{excerpt}</p>
-                </article>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
+      <HomeLanding
+        categories={categories}
+        cta={cta}
+        description={description}
+        heroImage={heroImage}
+        lang={lang}
+        latestConfig={settings?.home_json?.latestPosts}
+        placeholder={placeholder}
+        posts={posts}
+        title={title}
+      />
 
       <JsonLd
         data={itemListSchema(

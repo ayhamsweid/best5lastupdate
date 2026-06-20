@@ -32,7 +32,8 @@ export function buildMetadata({
   description,
   path = '',
   noindex = false,
-  image
+  image,
+  alternates
 }: {
   lang: Lang;
   title: string;
@@ -40,6 +41,7 @@ export function buildMetadata({
   path?: string;
   noindex?: boolean;
   image?: string;
+  alternates?: Metadata['alternates'];
 }): Metadata {
   const fullPath = path ? `${lang}/${path.replace(/^\/+/, '')}` : lang;
   const url = absoluteUrl(`/${fullPath}`);
@@ -47,7 +49,7 @@ export function buildMetadata({
   return {
     title,
     description,
-    alternates: buildAlternates(lang, path),
+    alternates: alternates ?? buildAlternates(lang, path),
     robots: {
       index: !noindex,
       follow: true

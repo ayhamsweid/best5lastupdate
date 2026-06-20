@@ -1,0 +1,211 @@
+.hero {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(91, 115, 135, 0.35);
+  border-radius: 2rem;
+  min-height: 700px;
+  margin: 1.5rem auto 2.25rem;
+  background: #08121e;
+  box-shadow: 0 22px 64px rgba(0, 0, 0, 0.35);
+}
+
+.image,
+.overlay,
+.glow {
+  position: absolute;
+  inset: 0;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.32;
+}
+
+.overlay {
+  background:
+    linear-gradient(90deg, rgba(3, 8, 18, 0.84) 0%, rgba(4, 12, 24, 0.76) 36%, rgba(5, 24, 29, 0.68) 100%),
+    linear-gradient(180deg, rgba(7, 17, 28, 0.18) 0%, rgba(7, 17, 28, 0.52) 100%);
+}
+
+.glow {
+  background:
+    radial-gradient(circle at 12% 88%, rgba(40, 199, 111, 0.18), transparent 28%),
+    radial-gradient(circle at 86% 18%, rgba(40, 199, 111, 0.16), transparent 24%);
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 700px;
+  padding: 3rem 2.8rem 2.6rem;
+}
+
+.copy {
+  width: min(49rem, 100%);
+  margin-inline-start: auto;
+  padding-top: 0.5rem;
+  text-align: right;
+}
+
+.copyEn {
+  margin-inline-start: 0;
+  text-align: left;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.75rem 1.2rem;
+  border-radius: 999px;
+  background: rgba(46, 120, 77, 0.58);
+  border: 1px solid rgba(83, 214, 129, 0.32);
+  color: #eef8ef;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.title {
+  margin: 1.3rem 0 0;
+  color: #f7f8fa;
+  font-size: clamp(3.6rem, 8vw, 6.6rem);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  font-weight: 900;
+}
+
+.subtitle {
+  display: block;
+}
+
+.description {
+  max-width: 50rem;
+  margin: 1.6rem 0 0;
+  color: rgba(237, 241, 244, 0.9);
+  font-size: 1.6rem;
+  line-height: 1.8;
+}
+
+.searchForm {
+  display: flex;
+  align-items: stretch;
+  gap: 0.85rem;
+  width: min(44rem, 100%);
+  margin-top: 2rem;
+}
+
+.searchFormEn {
+  flex-direction: row;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid rgba(130, 146, 160, 0.36);
+  background: rgba(27, 39, 49, 0.74);
+  color: #f5f7f9;
+  border-radius: 1.2rem;
+  padding: 1.2rem 1.25rem;
+  font-size: 1.05rem;
+  outline: none;
+  backdrop-filter: blur(10px);
+}
+
+.searchInput::placeholder {
+  color: rgba(221, 228, 235, 0.62);
+}
+
+.searchButton {
+  border: none;
+  border-radius: 1.2rem;
+  background: #31d86b;
+  color: #04140d;
+  min-width: 11rem;
+  padding: 0 1.6rem;
+  font-size: 1.1rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 18px 40px rgba(49, 216, 107, 0.18);
+}
+
+.featured {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.2rem;
+  margin-top: 2rem;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 7.6rem;
+  padding: 1.25rem 1.4rem;
+  border-radius: 1.5rem;
+  text-decoration: none;
+  background: rgba(79, 93, 108, 0.34);
+  border: 1px solid rgba(142, 155, 170, 0.24);
+  color: #f5f7f9;
+  backdrop-filter: blur(10px);
+}
+
+.cardLabel {
+  color: rgba(223, 228, 235, 0.76);
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.cardTitle {
+  margin-top: 0.6rem;
+  font-size: 1.18rem;
+  line-height: 1.6;
+  font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  .hero,
+  .content {
+    min-height: auto;
+  }
+
+  .content {
+    padding: 1.6rem 1.1rem 1.1rem;
+  }
+
+  .copy,
+  .copyEn {
+    width: 100%;
+  }
+
+  .title {
+    font-size: clamp(2.5rem, 11vw, 4.2rem);
+    line-height: 1.02;
+  }
+
+  .description {
+    font-size: 1.1rem;
+    line-height: 1.75;
+  }
+
+  .searchForm,
+  .searchFormEn {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .searchButton {
+    min-height: 3.65rem;
+  }
+
+  .featured {
+    grid-template-columns: 1fr;
+    margin-top: 1.5rem;
+  }
+}
