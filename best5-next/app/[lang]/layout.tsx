@@ -17,7 +17,7 @@ export default async function LocaleLayout({
   return (
     <>
       <SiteHeader lang={lang} />
-      <main className="shell page">{children}</main>
+      <main className="shell page app-main">{children}</main>
       <SiteFooter lang={lang} latestPosts={latestPosts} />
     </>
   );

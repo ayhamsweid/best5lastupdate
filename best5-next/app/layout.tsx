@@ -32,7 +32,15 @@ export default async function RootLayout({
   const lang = isLang(segment) ? segment : defaultLang;
 
   return (
-    <html lang={lang} dir={dirForLang(lang)}>
+    <html lang={lang} dir={dirForLang(lang)} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var k='best5-theme';var s=localStorage.getItem(k);var t=(s==='light'||s==='dark')?s:(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='light';}})();"
+          }}
+        />
+      </head>
       <body>
         <JsonLd data={organizationSchema()} />
         <Script

@@ -1,9 +1,15 @@
 import { apiBaseUrl, Lang } from './i18n';
 import type { PublicCategory, PublicPost } from './types';
 
-async function fetchJson<T>(path: string, revalidate = 300): Promise<T> {
+async function fetchJson<T>(
+  path: string,
+  revalidate = 300,
+  init?: {
+    cache?: RequestCache;
+  }
+): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
-    next: { revalidate },
+    ...(init?.cache === 'no-store' ? { cache: 'no-store' as const } : { next: { revalidate } }),
     headers: {
       Accept: 'application/json'
     }
@@ -30,5 +36,7 @@ export function getPosts(lang: Lang, category?: string) {
 }
 
 export function getPost(lang: Lang, slug: string) {
-  return fetchJson<PublicPost>(`/posts/public/${encodeURIComponent(slug)}?lang=${lang}`, 300);
+  return fetchJson<PublicPost>(`/posts/public/${encodeURIComponent(slug)}?lang=${lang}`, 300, {
+    cache: 'no-store'
+  });
 }
